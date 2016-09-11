@@ -29,22 +29,42 @@ public class PorterStemmer {
    // double consonant: token ends in two consonants that are the same, 
    //			unless they are L, S, or Z. (look up "backreferencing" to help 
    //			with this)
-   private static final Pattern dC = Pattern.compile("[^lsz]$\1");
+   private static final Pattern dC = Pattern.compile("([^aeiouylsz])\\1$");
    // m equals 1, cvc: token is in Cvc form, where the last c is not w, x,
    //			or y.
-   private static final Pattern mE1CVC = Pattern.compile(C + V + "[^aeiouwxy]{1}$");
+   private static final Pattern mE1CVC = Pattern.compile(C + v + "[^aeiouwxy]$");
    
    // NEED TO DO 2D ARRAY
-   private static final HashMap<String, String> step2Suffix = new HashMap<>();
-   private static final HashMap<String, String> step3Suffix = new HashMap<>();
-   private static final HashMap<String, String> step4Suffix = new HashMap<>();
+   private static final String[][] step2Suffix = {new String[] {"ational", "ate"}, 
+       new String[] {"tional", "tion"}, new String[] {"enci", "ence"}, 
+       new String[] {"anci", "ance"}, new String[] {"izer", "ize"},
+       new String[] {"abli", "able"}, new String[] {"alli", "al"},
+       new String[] {"entli", "ent"}, new String[] {"eli", "e"},
+       new String[] {"ousli", "ous"}, new String[] {"ization", "ize"},
+       new String[] {"ation", "ate"}, new String[] {"ator", "ate"},
+       new String[] {"alism", "al"}, new String[] {"iveness", "ive"},
+       new String[] {"fulness", "ful"}, new String[] {"ousness", "ous"},
+       new String[] {"aliti", "al"}, new String[] {"iviti", "ive"},
+       new String[] {"biliti", "ble"}
+   };
+   private static final String[][] step3Suffix = {new String[] {"icate", "ic"},
+       new String[] {"ative", ""}, new String[] {"alize", "al"},
+       new String[] {"iciti", "ic"}, new String[] {"ical", "ic"},
+       new String[] {"ful", ""}, new String[] {"ness", ""}
    
-   public static void main(String[] args) {
+   };
+   private static final String[][] step4Suffix = {new String[] {"al", ""},
+       new String[] {"ance", ""}, new String[] {"ence", ""}, new String[] {"er", ""},
+       new String[] {"ic", ""}, new String[] {"able", ""}, new String[] {"ible", ""},
+       new String[] {"ant", ""}, new String[] {"ement", ""}, new String[] {"ment", ""},
+       new String[] {"ent", ""}, new String[] {"ion", ""}, new String[] {"ou", ""},
+       new String[] {"ism", ""}, new String[] {"ate", ""}, new String[] {"iti", ""},
+       new String[] {"ous", ""}, new String[] {"ive", ""}, new String[] {"ize", ""}
+   };
+   
+   /*public static void main(String[] args) {
 	   Scanner scan = new Scanner(System.in);
 	   String word = scan.next();
-	   setupStep2Map();
-           setupStep3Map();
-           setupStep4Map();
            
 	   while(word.compareTo("quit") != 0) {
 		System.out.println(processToken(word));
@@ -52,7 +72,7 @@ public class PorterStemmer {
 	   }
 	   
 	   scan.close();
-   }
+   }*/
    
    public static String processToken(String token) {
       if (token.length() < 3) {
@@ -188,31 +208,34 @@ public class PorterStemmer {
    }
    
    private static String stepMapHelper(String token, int step, Pattern type) {
-        HashMap<String, String> map = new HashMap<>();
+        String[][] map = {};
         
-        if(step == 2) {
-            map = step2Suffix;
-        }
-        else if(step == 3) {
-            map = step3Suffix;
-        }
-        else if(step == 4) {
-            map = step4Suffix;
-        }
+       switch (step) {
+           case 2:
+               map = step2Suffix;
+               break;
+           case 3:
+               map = step3Suffix;
+               break;
+           case 4:
+               map = step4Suffix;
+               break;
+           default:
+               break;
+       }
       
-        for(String key : map.keySet()) {
-            if(token.endsWith(key)) {
-                System.out.println(key);
-                if(step == 4 && key.compareTo("ion") == 0 && token.length() > 3) {
+        for(String[] key : map) {
+            if(token.endsWith(key[0])) {
+                if(step == 4 && key[0].compareTo("ion") == 0 && token.length() > 3) {
                     if(token.charAt(token.length()-4) != 's' && token.charAt(token.length()-4) != 't') {
                         break;
                     }
                 }
                 
-                String stem = token.substring(0, token.length() - key.length());
+                String stem = token.substring(0, token.length() - key[0].length());
               
                 if(type.matcher(stem).find()) {
-                    token = stem + map.get(key);
+                    token = stem + key[1];
                 }
                     
                 break;
@@ -220,60 +243,5 @@ public class PorterStemmer {
         }
         
         return token;
-   }
-   
-   private static void setupStep2Map() {
-       step2Suffix.put("ational", "ate");
-       step2Suffix.put("tional", "tion");
-       step2Suffix.put("enci", "ence");
-       step2Suffix.put("anci", "ance");
-       step2Suffix.put("izer", "ize");
-       step2Suffix.put("abli", "able");
-       step2Suffix.put("alli", "al");
-       step2Suffix.put("entli", "ent");
-       step2Suffix.put("eli", "e");
-       step2Suffix.put("ousli", "ous");
-       step2Suffix.put("ization", "ize");
-       step2Suffix.put("ation", "ate");
-       step2Suffix.put("ator", "ate");
-       step2Suffix.put("alism", "al");
-       step2Suffix.put("iveness", "ive");
-       step2Suffix.put("fulness", "ful");
-       step2Suffix.put("ousness", "ous");
-       step2Suffix.put("aliti", "al");
-       step2Suffix.put("iviti", "ive");
-       step2Suffix.put("biliti", "ble");
-   }
-   
-   private static void setupStep3Map() {
-       step3Suffix.put("icate", "ic");
-       step3Suffix.put("ative", "");
-       step3Suffix.put("alize", "al");
-       step3Suffix.put("iciti", "ic");
-       step3Suffix.put("ical", "ic");
-       step3Suffix.put("ful", "");
-       step3Suffix.put("ness", "");
-   }
-   
-   private static void setupStep4Map() {
-       step4Suffix.put("al", "");
-       step4Suffix.put("ance", "");
-       step4Suffix.put("ence", "");
-       step4Suffix.put("er", "");
-       step4Suffix.put("ic", "");
-       step4Suffix.put("able", "");
-       step4Suffix.put("ible", "");
-       step4Suffix.put("ant", "");
-       step4Suffix.put("ement", "");
-       step4Suffix.put("ment", "");
-       step4Suffix.put("ent", "");
-       step4Suffix.put("ion", "");
-       step4Suffix.put("ou", "");
-       step4Suffix.put("ism", "");
-       step4Suffix.put("ate", "");
-       step4Suffix.put("iti", "");
-       step4Suffix.put("ous", "");
-       step4Suffix.put("ive", "");
-       step4Suffix.put("ize", "");
    }
 }
