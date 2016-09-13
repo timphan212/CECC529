@@ -1,7 +1,6 @@
 package homework4;
 
 
-import homework3.*;
 import java.util.*;
 
 public class NaiveInvertedIndex {
@@ -26,7 +25,7 @@ public class NaiveInvertedIndex {
       else {
     	  List<Integer> docList = mIndex.get(term);
     	  
-    	  if(!docList.contains(documentID)) {
+    	  if(docList.get(docList.size()-1) != documentID) {
     		  docList.add(documentID);
     		  mIndex.replace(term, docList);
     	  }

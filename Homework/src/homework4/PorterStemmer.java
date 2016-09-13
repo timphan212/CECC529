@@ -1,7 +1,5 @@
 package homework4;
 
-import java.util.HashMap;
-import java.util.Scanner;
 import java.util.regex.*;
 
 public class PorterStemmer {

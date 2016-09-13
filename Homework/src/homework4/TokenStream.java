@@ -1,7 +1,5 @@
 package homework4;
 
-import homework3.*;
-
 /**
  TokenStreams read tokens one at a time from a stream of input.
  */
