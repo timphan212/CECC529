@@ -51,9 +51,17 @@ public class SearchEngineProject {
         
     }
     
+    /**
+     * Goes through each file in the directory and indexes the file by adding
+     * the terms to the positional inverted index
+     * @param currentWorkingPath the directory of the corpus
+     * @return
+     * @throws IOException 
+     */
     private static List<String> indexDirectory(Path currentWorkingPath) throws IOException {
         // the list of file names that were processed
         final List<String> fileNames = new ArrayList<String>();
+        
         // This is our standard "walk through all .txt files" code.
         Files.walkFileTree(currentWorkingPath, new SimpleFileVisitor<Path>() {
             int mDocumentID = 0;
