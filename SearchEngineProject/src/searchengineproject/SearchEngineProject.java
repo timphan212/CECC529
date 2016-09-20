@@ -23,6 +23,9 @@ import java.util.Scanner;
  * @author Timothy
  */
 public class SearchEngineProject {
+    private static List<String> fileNames = new ArrayList<>();
+    private static PositionalInvertedIndex index = new 
+        PositionalInvertedIndex();
     /**
      * @param args the command line arguments
      */
@@ -38,13 +41,14 @@ public class SearchEngineProject {
         System.out.println("Indexing " + dir);
         
         // index the directory and retrieve a list of file names
-        List<String> fileNames = indexDirectory(currentWorkingPath);
+        indexDirectory(currentWorkingPath);
         System.out.println("Successfully indexed " + fileNames.size()
                 + " files.\n");
         System.out.print("Enter a search query: ");
         
         // retrieve the search query from user and parse
-        String query = scan.next();
+        scan.nextLine();
+        String query = scan.nextLine();
         parseQuery(query);
         
         scan.close();
@@ -58,10 +62,11 @@ public class SearchEngineProject {
      * @return
      * @throws IOException 
      */
-    private static List<String> indexDirectory(Path currentWorkingPath) throws IOException {
-        // the list of file names that were processed
-        final List<String> fileNames = new ArrayList<String>();
-        
+    private static void indexDirectory(Path currentWorkingPath) 
+            throws IOException {
+        // create a new list of file names and new index
+        fileNames = new ArrayList<String>();
+        index = new PositionalInvertedIndex();
         // This is our standard "walk through all .txt files" code.
         Files.walkFileTree(currentWorkingPath, new SimpleFileVisitor<Path>() {
             int mDocumentID = 0;
@@ -79,12 +84,12 @@ public class SearchEngineProject {
                     BasicFileAttributes attrs) {
                 // only process .txt files
                 if (file.toString().endsWith(".json")) {
-                    // we have found a .txt file; add its name to the fileName list,
-                    // then index the file and increase the document ID counter.
-                    // System.out.println("Indexing file " + file.getFileName());
+                    // we have found a .json file; add its name to the fileName
+                    // list, then index the file and increase the document ID
+                    // counter.
 
                     fileNames.add(file.getFileName().toString());
-                    //indexFile(file.toFile(), index, mDocumentID);
+                    indexFile(file.toFile(), mDocumentID);
                     mDocumentID++;
                 }
                 return FileVisitResult.CONTINUE;
@@ -98,8 +103,6 @@ public class SearchEngineProject {
             }
 
         });
-        
-        return fileNames;
     }
     
     /**
@@ -108,24 +111,22 @@ public class SearchEngineProject {
      * index for the term.
      *
      * @param file a File object for the document to index.
-     * @param index the current state of the index for the files that have
-     * already been processed.
      * @param docID the integer ID of the current document, needed when indexing
      * each term from the document.
      */
     private static void indexFile(File file, int docID) {
-      // TO-DO: finish this method for indexing a particular file.
         // Construct a SimpleTokenStream for the given File.
         // Read each token from the stream and add it to the index.
 
         try {
             SimpleTokenStream tokeStream = new SimpleTokenStream(file);
             String term = tokeStream.nextToken();
-            System.out.println(term);
+            int counter = 0;
             while (term != null) {
                 term = PorterStemmer.processToken(term);
-                //index.addTerm(term, docID);
+                index.addTerm(term, docID, counter);
                 term = tokeStream.nextToken();
+                counter++;
             }
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -136,10 +137,54 @@ public class SearchEngineProject {
      * Parses the search query to perform the specified operation
      * @param query a string representing the search query
      */
-    private static void parseQuery(String query) {
-        while(query.compareTo(":q") != 0) {
+    private static void parseQuery(String query) throws IOException {
+        String[] queryTokens = query.split(" ");
+        Scanner scan = new Scanner(System.in);
+        
+        while(queryTokens[0].compareTo(":q") != 0) {
+            switch(queryTokens[0]) {
+                case ":stem":
+                    // porter stem term
+                    System.out.println(PorterStemmer
+                            .processToken(queryTokens[1]));
+                    break;
+                case ":index":
+                    // index the specified directory
+                    final Path currentWorkingPath = Paths.get(Paths.get("")
+                            .toAbsolutePath() + "\\" + queryTokens[1]);
+                    indexDirectory(currentWorkingPath);
+                    System.out.println("Successfully indexed " + 
+                            fileNames.size() + " files.");
+                    break;
+                case ":vocab":
+                    // print all terms in the vocabulary of the corpus
+                    printVocab();
+                    break;
+                default:
+                    break;
+            }
             
-            
+            System.out.print("\nEnter a search query: ");
+            query = scan.nextLine();
+            queryTokens = query.split(" ");
         }
+        
+        scan.close();
+    }
+    
+    /**
+     * Print out all the terms in the vocabulary of the corpus
+     */
+    private static void printVocab() {
+        // Get the list of terms in the corpus
+        String[] terms = index.getTerms();
+        
+        // Loop through each term to print them out
+        for(String term : terms) {
+            System.out.println(term);
+        }
+        
+        // Print out the count of the total number
+        System.out.println(index.getTermCount());
     }
 }
