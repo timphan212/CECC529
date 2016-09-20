@@ -120,12 +120,22 @@ public class SearchEngineProject {
 
         try {
             SimpleTokenStream tokeStream = new SimpleTokenStream(file);
-            String term = tokeStream.nextToken();
+            // Get the list of terms
+            ArrayList<String> terms = tokeStream.nextTokens();
             int counter = 0;
-            while (term != null) {
-                term = PorterStemmer.processToken(term);
-                index.addTerm(term, docID, counter);
-                term = tokeStream.nextToken();
+            
+            while(terms != null) {
+                // Loop through the list of terms
+                for(String term : terms) {
+                    // Stem the term
+                    term = PorterStemmer.processToken(term);
+                    // Add the term to the index
+                    index.addTerm(term, docID, counter);
+                }
+                
+                // Get the next list of terms
+                terms = tokeStream.nextTokens();
+                // Increment the position counter
                 counter++;
             }
         } catch (FileNotFoundException e) {

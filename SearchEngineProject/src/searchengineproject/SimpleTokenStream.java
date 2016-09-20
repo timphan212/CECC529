@@ -34,16 +34,40 @@ public class SimpleTokenStream implements TokenStream {
    }
 
    /**
-   Returns the next token from the stream, or null if there is no token
+   Returns an array of tokens from the stream, or null if there is no token
    available.
    */
-   @Override
-   public String nextToken() {
-      if (!hasNextToken())
-         return null;
-      
-      String next = mReader.next().replaceAll("\\W", "").toLowerCase();
-      return next.length() > 0 ? next : 
-       hasNextToken() ? nextToken() : null;
-   }
+    public ArrayList<String> nextTokens() {
+        ArrayList<String> tokens = new ArrayList<>();
+        if (!hasNextToken()) {
+            return null;
+        }
+        
+        // Convert the token to lowercase
+        String next = mReader.next().toLowerCase();
+        // Remove non-alphanumeric characters from the beginning and end and
+        // apostrophes in the middle of the token
+        next = next.replaceAll("^[^a-z0-9]+|[']+|[^a-z0-9]+$", "");
+        
+        // check if the token has a hyphen
+        if(next.contains("-")) {
+            // add the word without the hyphen
+            tokens.add(next.replace("-", ""));
+            // split the word on the hyphen then add each individual word to 
+            // the list
+            tokens.addAll(Arrays.asList(next.split("-")));
+        }
+        // token does not contain a hyphen therefore just add to list
+        else {
+            tokens.add(next);
+        }
+        
+        return tokens.size() > 0 ? tokens
+                : hasNextToken() ? nextTokens() : null;
+    }
+
+    @Override
+    public String nextToken() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }
