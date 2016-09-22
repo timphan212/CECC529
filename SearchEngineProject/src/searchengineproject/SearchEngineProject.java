@@ -15,6 +15,7 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Scanner;
 
@@ -210,25 +211,48 @@ public class SearchEngineProject {
         boolean flag = false;
         String phrase = "";
         ArrayList<String> queryList = new ArrayList<>();
+        ArrayList<ArrayList<Integer>> files = new ArrayList<>();
+        int counter = 0;
         
+        // use some kind of leading pointer to pass two at a time to merge
         for(int i = 0; i < tokens.length; i++) {
             // phrase query look up first term then check if position of second term is +1
             // or query merge results
             // and query find intersection
         }
-        System.out.println(phrase);
     }
     
-    private static void searchToken(String token) {
+    private static ArrayList<Integer> searchToken(String token) {
+        ArrayList<Integer> files = new ArrayList<>();
+        
         ArrayList<PositionalPosting> pospostList = index
                 .getPositionalPosting(PorterStemmer.processToken(token));
-        ArrayList<String> files = new ArrayList<>();
-        
         for(PositionalPosting pospost : pospostList) {
-            files.add(fileNames.get(pospost.getDocID()));
-            System.out.println(fileNames.get(pospost.getDocID()));
+            files.add(pospost.getDocID());
         }
         
-        System.out.println(files.size() + " documents found.");
+        return files;
+    }
+    
+    private static ArrayList<Integer> mergeFileLists
+        (ArrayList<Integer> fileList1, ArrayList<Integer> fileList2) {
+        ArrayList<Integer> mergedFiles = new ArrayList<>();
+        int i = 0, j = 0;
+        
+        while(i < fileList1.size() || j < fileList2.size()) {
+            if(fileList1.get(i) < fileList2.get(j)) {
+                i++;
+            }
+            else if(fileList1.get(i) > fileList2.get(j)) {
+                j++;
+            }
+            else {
+                mergedFiles.add(fileList1.get(i));
+                i++;
+                j++;    
+            }
+        }
+        
+        return mergedFiles;    
     }
 }
