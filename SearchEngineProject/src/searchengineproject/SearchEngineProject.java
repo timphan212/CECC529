@@ -171,6 +171,8 @@ public class SearchEngineProject {
                     printVocab();
                     break;
                 default:
+                    //do the search query
+                    searchResults(query);
                     break;
             }
             
@@ -196,5 +198,37 @@ public class SearchEngineProject {
         
         // Print out the count of the total number
         System.out.println(index.getTermCount());
+    }
+    
+    /**
+     * Searches the index for the query and merge the results to display to the
+     * user
+     * @param query the query to search the index with
+     */
+    private static void searchResults(String query) {
+        String[] tokens = query.split(" ");
+        boolean flag = false;
+        String phrase = "";
+        ArrayList<String> queryList = new ArrayList<>();
+        
+        for(int i = 0; i < tokens.length; i++) {
+            // phrase query look up first term then check if position of second term is +1
+            // or query merge results
+            // and query find intersection
+        }
+        System.out.println(phrase);
+    }
+    
+    private static void searchToken(String token) {
+        ArrayList<PositionalPosting> pospostList = index
+                .getPositionalPosting(PorterStemmer.processToken(token));
+        ArrayList<String> files = new ArrayList<>();
+        
+        for(PositionalPosting pospost : pospostList) {
+            files.add(fileNames.get(pospost.getDocID()));
+            System.out.println(fileNames.get(pospost.getDocID()));
+        }
+        
+        System.out.println(files.size() + " documents found.");
     }
 }
