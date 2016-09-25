@@ -211,10 +211,9 @@ public class SearchEngineProject {
     private static void searchResults(String query) {
         String[] tokens = query.split(" ");
         ArrayList<Integer> files1 = new ArrayList<>();
-        ArrayList<Integer> files2 = new ArrayList<>();
+        ArrayList<ArrayList<PositionalPosting>> phraseList = new ArrayList<>();
         ArrayList<ArrayList<Integer>> fileList = new ArrayList<>();
-        int counter = 0;
-        boolean orFlag = false;
+        boolean orFlag = false, phraseFlag = false;
         
         // print out the files for only one literal
         if(tokens.length == 1) {
@@ -224,8 +223,28 @@ public class SearchEngineProject {
         else {
             // loop through each literal
             for(int i = 0; i < tokens.length; i++) {
+                // check if the token starts with a quotation mark
+                if(tokens[i].startsWith("\"")) {
+                    phraseList.add(index.getPositionalPosting(PorterStemmer
+                            .processToken(tokens[i].substring(1))));
+                    phraseFlag = true;
+                }
+                // check if the token ends with a quotation mark
+                else if(tokens[i].endsWith("\"")) {
+                    phraseList.add(index.getPositionalPosting(PorterStemmer
+                            .processToken(tokens[i].substring(0, tokens[i]
+                                    .length()-1))));
+                    phraseFlag = false;
+                    files1 = mergeFileLists(files1, 
+                            phraseMergeFileLists(phraseList));
+                }
+                // check if the phrase flag is true then add to the phrase list
+                else if(phraseFlag == true) {
+                    phraseList.add(index.getPositionalPosting(PorterStemmer
+                                    .processToken(tokens[i])));
+                }
                 // get the file list for the first token or if the flag was set
-                if(i == 0 || orFlag == true) {
+                else if(i == 0 || orFlag == true) {
                     files1 = searchToken(tokens[i]);
                     orFlag = false;
                 }
@@ -281,13 +300,25 @@ public class SearchEngineProject {
         return mergedFiles;    
     }
     
+    private static ArrayList<Integer> phraseMergeFileLists(
+            ArrayList<ArrayList<PositionalPosting>> fileList) {
+        ArrayList<Integer> phraseFiles = new ArrayList<>();
         
-    private static ArrayList<Integer> orFileLists(ArrayList<ArrayList<Integer>> fileList) {
+        return phraseFiles;
+    }
+        
+    private static ArrayList<Integer> orFileLists(
+            ArrayList<ArrayList<Integer>> fileList) {
         ArrayList<Integer> orFiles = new ArrayList<>();
         
-        for(ArrayList<Integer> files : fileList) {
-            orFiles.removeAll(files);
-            orFiles.addAll(files);
+        if(fileList.size() == 1) {
+            orFiles = fileList.get(0);
+        }
+        else {
+            for(ArrayList<Integer> files : fileList) {
+                orFiles.removeAll(files);
+                orFiles.addAll(files);
+            }
         }
         
         return orFiles;
