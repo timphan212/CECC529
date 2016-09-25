@@ -30,7 +30,7 @@ public class PorterStemmer {
     private static final Pattern dC = Pattern.compile("([^aeiouylsz])\\1$");
    // m equals 1, cvc: token is in Cvc form, where the last c is not w, x,
     //			or y.
-    private static final Pattern mE1CVC = Pattern.compile(C + v
+    private static final Pattern mE1CVC = Pattern.compile("^" + C + v
             + "[^aeiouwxy]$");
 
     private static final String[][] step2Suffix = {
@@ -167,7 +167,7 @@ public class PorterStemmer {
         // program this step. the rules are identical to step 2 and you can use
         // the same helper method. you may also want a matrix here.
         token = stepMapHelper(token, 3, mGr0);
-
+        
         // step 4
         // program this step similar to step 2/3, except now the stem must have
         // measure > 1.
@@ -176,7 +176,6 @@ public class PorterStemmer {
         // as before, if one suffix matches, do not try any others even if the 
         // stem does not have measure > 1.
         token = stepMapHelper(token, 4, mGr1);
-
         // step 5
         // program this step. you have a regex for m=1 and for "Cvc", which
         // you can use to see if m=1 and NOT Cvc.

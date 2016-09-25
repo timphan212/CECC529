@@ -173,7 +173,9 @@ public class SearchEngineProject {
                     break;
                 default:
                     //do the search query
-                    searchResults(query);
+                    String formatQuery = query.toLowerCase();
+                    formatQuery = formatQuery.replaceAll("[-]+|[\']", "");
+                    searchResults(formatQuery);
                     break;
             }
             
@@ -208,18 +210,32 @@ public class SearchEngineProject {
      */
     private static void searchResults(String query) {
         String[] tokens = query.split(" ");
-        boolean flag = false;
-        String phrase = "";
-        ArrayList<String> queryList = new ArrayList<>();
-        ArrayList<ArrayList<Integer>> files = new ArrayList<>();
-        int counter = 0;
+        ArrayList<Integer> files1 = new ArrayList<>();
+        ArrayList<Integer> files2 = new ArrayList<>();
         
+        // print out the files for only one literal
+        if(tokens.length == 1) {
+            printFiles(searchToken(tokens[0]));
+        }
+        // there is more than one literal and needs extra parsing
+        else {
+            // loop through each literal
+            for(int i = 0; i < tokens.length - 1; i++) {                             
+                // grab the file list for the first literal
+                if(i == 0) {
+                    files1 = searchToken(tokens[i]);
+                }
+                // grab the file list for the second literal
+                files2 = searchToken(tokens[i+1]);
+                // AND the two lists together
+                files1 = mergeFileLists(files1, files2);
+            }
+            printFiles(files1);
+        }
         // use some kind of leading pointer to pass two at a time to merge
-        for(int i = 0; i < tokens.length; i++) {
             // phrase query look up first term then check if position of second term is +1
             // or query merge results
             // and query find intersection
-        }
     }
     
     private static ArrayList<Integer> searchToken(String token) {
@@ -239,7 +255,7 @@ public class SearchEngineProject {
         ArrayList<Integer> mergedFiles = new ArrayList<>();
         int i = 0, j = 0;
         
-        while(i < fileList1.size() || j < fileList2.size()) {
+        while(i < fileList1.size() && j < fileList2.size()) {
             if(fileList1.get(i) < fileList2.get(j)) {
                 i++;
             }
@@ -254,5 +270,24 @@ public class SearchEngineProject {
         }
         
         return mergedFiles;    
+    }
+    
+        
+    private static ArrayList<Integer> orFileLists(ArrayList<Integer> fileList1,
+            ArrayList<Integer> fileList2) {
+        ArrayList<Integer> orFiles = new ArrayList<>();
+        orFiles.addAll(fileList1);
+        orFiles.removeAll(fileList2);
+        orFiles.addAll(fileList2);
+        
+        return orFiles;
+    }
+    
+    private static void printFiles(ArrayList<Integer> files) {
+        for(Integer file : files) {
+            System.out.println(fileNames.get(file));
+        }
+        
+        System.out.println(files.size() + " documents found.");
     }
 }
