@@ -212,6 +212,9 @@ public class SearchEngineProject {
         String[] tokens = query.split(" ");
         ArrayList<Integer> files1 = new ArrayList<>();
         ArrayList<Integer> files2 = new ArrayList<>();
+        ArrayList<ArrayList<Integer>> fileList = new ArrayList<>();
+        int counter = 0;
+        boolean orFlag = false;
         
         // print out the files for only one literal
         if(tokens.length == 1) {
@@ -220,22 +223,28 @@ public class SearchEngineProject {
         // there is more than one literal and needs extra parsing
         else {
             // loop through each literal
-            for(int i = 0; i < tokens.length - 1; i++) {                             
-                // grab the file list for the first literal
-                if(i == 0) {
+            for(int i = 0; i < tokens.length; i++) {
+                // get the file list for the first token or if the flag was set
+                if(i == 0 || orFlag == true) {
                     files1 = searchToken(tokens[i]);
+                    orFlag = false;
                 }
-                // grab the file list for the second literal
-                files2 = searchToken(tokens[i+1]);
-                // AND the two lists together
-                files1 = mergeFileLists(files1, files2);
+                // the current token is a "+", add the current merged lists to
+                // the file lists
+                else if(tokens[i].compareTo("+") == 0) {
+                    fileList.add(files1);
+                    orFlag = true;
+                }
+                // merge the files (AND the queries)
+                else {
+                    files1 = mergeFileLists(files1, searchToken(tokens[i]));
+                }
             }
-            printFiles(files1);
+            // add the last file list to the lists of files
+            fileList.add(files1);
+            // OR the queries together and print it out
+            printFiles(orFileLists(fileList));
         }
-        // use some kind of leading pointer to pass two at a time to merge
-            // phrase query look up first term then check if position of second term is +1
-            // or query merge results
-            // and query find intersection
     }
     
     private static ArrayList<Integer> searchToken(String token) {
@@ -273,12 +282,13 @@ public class SearchEngineProject {
     }
     
         
-    private static ArrayList<Integer> orFileLists(ArrayList<Integer> fileList1,
-            ArrayList<Integer> fileList2) {
+    private static ArrayList<Integer> orFileLists(ArrayList<ArrayList<Integer>> fileList) {
         ArrayList<Integer> orFiles = new ArrayList<>();
-        orFiles.addAll(fileList1);
-        orFiles.removeAll(fileList2);
-        orFiles.addAll(fileList2);
+        
+        for(ArrayList<Integer> files : fileList) {
+            orFiles.removeAll(files);
+            orFiles.addAll(files);
+        }
         
         return orFiles;
     }
