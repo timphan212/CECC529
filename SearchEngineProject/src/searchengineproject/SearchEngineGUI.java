@@ -41,10 +41,15 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         mainLayout = new javax.swing.JPanel();
         searchBar = new javax.swing.JTextField();
         searchButton = new javax.swing.JButton();
+        stemButton = new javax.swing.JButton();
+        tableScrollPane = new javax.swing.JScrollPane();
+        docTable = new javax.swing.JTable();
         jMenuBar1 = new javax.swing.JMenuBar();
         fileMenu = new javax.swing.JMenu();
         openMenu = new javax.swing.JMenuItem();
         exitMenu = new javax.swing.JMenuItem();
+        viewMenu = new javax.swing.JMenu();
+        vocabMenu = new javax.swing.JMenuItem();
 
         fileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
@@ -61,11 +66,56 @@ public class SearchEngineGUI extends javax.swing.JFrame {
             }
         });
         mainLayout.add(searchBar);
-        searchBar.setBounds(10, 10, 440, 30);
+        searchBar.setBounds(10, 10, 350, 30);
 
         searchButton.setText("Search");
+        searchButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                searchButtonActionPerformed(evt);
+            }
+        });
         mainLayout.add(searchButton);
         searchButton.setBounds(460, 10, 80, 30);
+
+        stemButton.setText("Stem");
+        stemButton.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                stemButtonActionPerformed(evt);
+            }
+        });
+        mainLayout.add(stemButton);
+        stemButton.setBounds(370, 10, 80, 30);
+
+        docTable.setModel(new javax.swing.table.DefaultTableModel(
+            new Object [][] {
+
+            },
+            new String [] {
+                "Documents"
+            }
+        ) {
+            Class[] types = new Class [] {
+                java.lang.String.class
+            };
+            boolean[] canEdit = new boolean [] {
+                false
+            };
+
+            public Class getColumnClass(int columnIndex) {
+                return types [columnIndex];
+            }
+
+            public boolean isCellEditable(int rowIndex, int columnIndex) {
+                return canEdit [columnIndex];
+            }
+        });
+        tableScrollPane.setViewportView(docTable);
+        if (docTable.getColumnModel().getColumnCount() > 0) {
+            docTable.getColumnModel().getColumn(0).setResizable(false);
+        }
+
+        mainLayout.add(tableScrollPane);
+        tableScrollPane.setBounds(10, 50, 530, 220);
 
         getContentPane().add(mainLayout);
 
@@ -88,6 +138,18 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         fileMenu.add(exitMenu);
 
         jMenuBar1.add(fileMenu);
+
+        viewMenu.setText("View");
+
+        vocabMenu.setText("Vocabulary");
+        vocabMenu.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                vocabMenuActionPerformed(evt);
+            }
+        });
+        viewMenu.add(vocabMenu);
+
+        jMenuBar1.add(viewMenu);
 
         setJMenuBar(jMenuBar1);
 
@@ -119,6 +181,18 @@ public class SearchEngineGUI extends javax.swing.JFrame {
     private void searchBarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchBarActionPerformed
         // TODO add your handling code here:
     }//GEN-LAST:event_searchBarActionPerformed
+
+    private void vocabMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_vocabMenuActionPerformed
+        // TODO SHOW VOCABULARY LIST
+    }//GEN-LAST:event_vocabMenuActionPerformed
+
+    private void stemButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_stemButtonActionPerformed
+        // TODO GRAB TEXT FROM SEARCHBAR, STEM TOKEN, OUTPUT TO TABLE
+    }//GEN-LAST:event_stemButtonActionPerformed
+
+    private void searchButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchButtonActionPerformed
+        // TODO DO SEARCH QUERY, OUTPUT RESULTS TO TABLE
+    }//GEN-LAST:event_searchButtonActionPerformed
 
     /**
      * @param args the command line arguments
@@ -156,6 +230,7 @@ public class SearchEngineGUI extends javax.swing.JFrame {
     }
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JTable docTable;
     private javax.swing.JMenuItem exitMenu;
     private javax.swing.JFileChooser fileChooser;
     private javax.swing.JMenu fileMenu;
@@ -164,5 +239,9 @@ public class SearchEngineGUI extends javax.swing.JFrame {
     private javax.swing.JMenuItem openMenu;
     private javax.swing.JTextField searchBar;
     private javax.swing.JButton searchButton;
+    private javax.swing.JButton stemButton;
+    private javax.swing.JScrollPane tableScrollPane;
+    private javax.swing.JMenu viewMenu;
+    private javax.swing.JMenuItem vocabMenu;
     // End of variables declaration//GEN-END:variables
 }
