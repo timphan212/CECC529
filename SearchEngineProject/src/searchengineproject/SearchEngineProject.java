@@ -5,8 +5,10 @@
  */
 package searchengineproject;
 
+import com.google.gson.Gson;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -123,7 +125,12 @@ public class SearchEngineProject {
         // Read each token from the stream and add it to the index.
 
         try {
-            SimpleTokenStream tokeStream = new SimpleTokenStream(file);
+            // use GSON to grab the body tag from the document
+            Gson gson = new Gson();
+            NPSDocument npsDoc = gson.fromJson(new FileReader(file),
+                    NPSDocument.class);
+            // pass the body string to the token stream
+            SimpleTokenStream tokeStream = new SimpleTokenStream(npsDoc.body);
             // Get the list of terms
             ArrayList<String> terms = tokeStream.nextTokens();
             int counter = 0;
@@ -278,7 +285,7 @@ public class SearchEngineProject {
      */
     private static ArrayList<Integer> searchToken(String token) {
         ArrayList<Integer> files = new ArrayList<>();
-        
+        token = token.replaceAll("[\"]", "");
         // stem the token and then get the list of postional postings for the
         // token
         ArrayList<PositionalPosting> pospostList = index
@@ -305,10 +312,10 @@ public class SearchEngineProject {
         ArrayList<Integer> mergedFiles = new ArrayList<>();
         int i = 0, j = 0;
         
-        if(fileList1.size() == 0) {
+        if(fileList1.isEmpty()) {
             return fileList2;
         }
-        if(fileList2.size() == 0) {
+        if(fileList2.isEmpty()) {
             return fileList1;
         }
         // keep looping until one of the list reaches the end
@@ -444,4 +451,10 @@ public class SearchEngineProject {
         
         System.out.println(files.size() + " documents found.");
     }
+}
+
+class NPSDocument {
+	String title;
+	String body;
+	String url;
 }
