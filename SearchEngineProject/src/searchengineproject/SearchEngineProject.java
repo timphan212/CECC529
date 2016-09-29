@@ -17,25 +17,30 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Scanner;
-import java.util.Set;
 
 /**
  *
  * @author Timothy
  */
 public class SearchEngineProject {
-    private static List<String> fileNames = new ArrayList<>();
-    private static PositionalInvertedIndex index = new 
+    private List<String> fileNames = new ArrayList<>();
+    private PositionalInvertedIndex index = new 
         PositionalInvertedIndex();
+    
+    public PositionalInvertedIndex getPositionalInvertedIndex() {
+        return index;
+    }
+    
+    public List<String> getFileNames() {
+        return fileNames;
+    }
+    
     /**
      * @param args the command line arguments
      */
-    public static void main(String[] args) throws IOException {
+    /*public static void main(String[] args) throws IOException {
         // ask the user for the directory to index
         Scanner scan = new Scanner(System.in);
         System.out.print("Enter a directory to index: ");
@@ -59,7 +64,7 @@ public class SearchEngineProject {
         
         scan.close();
         
-    }
+    }*/
     
     /**
      * Goes through each file in the directory and indexes the file by adding
@@ -68,7 +73,7 @@ public class SearchEngineProject {
      * @return
      * @throws IOException 
      */
-    private static void indexDirectory(Path currentWorkingPath) 
+    public void indexDirectory(Path currentWorkingPath) 
             throws IOException {
         // create a new list of file names and new index
         fileNames = new ArrayList<String>();
@@ -120,7 +125,7 @@ public class SearchEngineProject {
      * @param docID the integer ID of the current document, needed when indexing
      * each term from the document.
      */
-    private static void indexFile(File file, int docID) {
+    private void indexFile(File file, int docID) {
         // Construct a SimpleTokenStream for the given File.
         // Read each token from the stream and add it to the index.
 
@@ -158,7 +163,7 @@ public class SearchEngineProject {
      * Parses the search query to perform the specified operation
      * @param query a string representing the search query
      */
-    private static void parseQuery(String query) throws IOException {
+    private void parseQuery(String query) throws IOException {
         String[] queryTokens = query.split(" ");
         Scanner scan = new Scanner(System.in);
         
@@ -200,7 +205,7 @@ public class SearchEngineProject {
     /**
      * Print out all the terms in the vocabulary of the corpus
      */
-    private static void printVocab() {
+    private void printVocab() {
         // Get the list of terms in the corpus
         String[] terms = index.getTerms();
         
@@ -218,7 +223,7 @@ public class SearchEngineProject {
      * user
      * @param query the query to search the index with
      */
-    private static void searchResults(String query) {
+    private void searchResults(String query) {
         String[] tokens = query.split(" ");
         ArrayList<Integer> files1 = new ArrayList<>();
         ArrayList<ArrayList<PositionalPosting>> phraseList = new ArrayList<>();
@@ -283,7 +288,7 @@ public class SearchEngineProject {
      * @return return a list of integers representing the files the token is
      * located at
      */
-    private static ArrayList<Integer> searchToken(String token) {
+    private ArrayList<Integer> searchToken(String token) {
         ArrayList<Integer> files = new ArrayList<>();
         token = token.replaceAll("[\"]", "");
         // stem the token and then get the list of postional postings for the
@@ -307,7 +312,7 @@ public class SearchEngineProject {
      * @param fileList2 the second list of files
      * @return a merged list of fileList1 and fileList2
      */
-    private static ArrayList<Integer> mergeFileLists
+    private ArrayList<Integer> mergeFileLists
         (ArrayList<Integer> fileList1, ArrayList<Integer> fileList2) {
         ArrayList<Integer> mergedFiles = new ArrayList<>();
         int i = 0, j = 0;
@@ -347,7 +352,7 @@ public class SearchEngineProject {
      * @param fileList list of lists of positional postings for each token
      * @return return a list of integers representing the files
      */
-    private static ArrayList<Integer> phraseMergeFileLists(
+    private ArrayList<Integer> phraseMergeFileLists(
             ArrayList<ArrayList<PositionalPosting>> fileList) {
         // array list containing the files where the phrase is
         ArrayList<Integer> phraseFiles = new ArrayList<>();
@@ -420,7 +425,7 @@ public class SearchEngineProject {
      * @param fileList a list of lists of files
      * @return a list of integers that is from merging all the lists
      */
-    private static ArrayList<Integer> orFileLists(
+    private ArrayList<Integer> orFileLists(
             ArrayList<ArrayList<Integer>> fileList) {
         ArrayList<Integer> orFiles = new ArrayList<>();
         
@@ -443,7 +448,7 @@ public class SearchEngineProject {
      * Prints out the document name and the number of documents found
      * @param files a list of integers representing the files
      */
-    private static void printFiles(ArrayList<Integer> files) {
+    private void printFiles(ArrayList<Integer> files) {
         // loop through the list of files
         for(Integer file : files) {
             System.out.println(fileNames.get(file));
