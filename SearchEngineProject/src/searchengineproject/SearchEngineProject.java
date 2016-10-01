@@ -205,7 +205,7 @@ public class SearchEngineProject {
     /**
      * Print out all the terms in the vocabulary of the corpus
      */
-    private void printVocab() {
+    public void printVocab() {
         // Get the list of terms in the corpus
         String[] terms = index.getTerms();
         

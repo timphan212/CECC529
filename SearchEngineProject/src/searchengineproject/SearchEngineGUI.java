@@ -12,6 +12,8 @@ import java.nio.file.Paths;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
+import javax.swing.JOptionPane;
+import javax.swing.table.DefaultTableModel;
 
 /**
  *
@@ -169,8 +171,8 @@ public class SearchEngineGUI extends javax.swing.JFrame {
             
             try {
                 sep.indexDirectory(path);
-                System.out.println("Successfully indexed " + sep.getFileNames()
-                        .size() + " files.\n");
+                JOptionPane.showMessageDialog(this, "Successfully indexed "
+                        + sep.getFileNames().size() + " files.");
             } catch (IOException ex) {
                 Logger.getLogger(SearchEngineGUI.class.getName())
                         .log(Level.SEVERE, null, ex);
@@ -179,11 +181,22 @@ public class SearchEngineGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_openMenuActionPerformed
 
     private void searchBarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchBarActionPerformed
-        // TODO add your handling code here:
+        searchButtonActionPerformed(evt);
     }//GEN-LAST:event_searchBarActionPerformed
 
     private void vocabMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_vocabMenuActionPerformed
-        // TODO SHOW VOCABULARY LIST
+        String[] terms = sep.getPositionalInvertedIndex().getTerms();
+        int termCount = sep.getPositionalInvertedIndex().getTermCount();
+        String columnNames[] = new String[] {"Terms"};
+        DefaultTableModel model = (DefaultTableModel) docTable.getModel();
+        model.setRowCount(0);
+        model.setColumnIdentifiers(columnNames);
+        
+        for(String term : terms) {
+            model.addRow(new Object[]{term});
+        }
+        
+        model.addRow(new Object[]{termCount + " terms in the index."});
     }//GEN-LAST:event_vocabMenuActionPerformed
 
     private void stemButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_stemButtonActionPerformed
@@ -191,7 +204,8 @@ public class SearchEngineGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_stemButtonActionPerformed
 
     private void searchButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchButtonActionPerformed
-        // TODO DO SEARCH QUERY, OUTPUT RESULTS TO TABLE
+        
+        
     }//GEN-LAST:event_searchButtonActionPerformed
 
     /**
