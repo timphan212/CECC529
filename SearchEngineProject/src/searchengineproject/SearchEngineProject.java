@@ -205,7 +205,7 @@ public class SearchEngineProject {
     /**
      * Print out all the terms in the vocabulary of the corpus
      */
-    public void printVocab() {
+    /*public void printVocab() {
         // Get the list of terms in the corpus
         String[] terms = index.getTerms();
         
@@ -216,7 +216,7 @@ public class SearchEngineProject {
         
         // Print out the count of the total number
         System.out.println(index.getTermCount());
-    }
+    }*/
     
     /**
      * Searches the index for the query and merge the results to display to the

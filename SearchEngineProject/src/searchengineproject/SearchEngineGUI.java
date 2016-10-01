@@ -5,15 +5,30 @@
  */
 package searchengineproject;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import java.awt.Dimension;
+import java.awt.GridLayout;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import javax.swing.table.DefaultTableModel;
 
 /**
@@ -112,52 +127,68 @@ public class SearchEngineGUI extends javax.swing.JFrame {
                 return canEdit [columnIndex];
             }
         });
-        tableScrollPane.setViewportView(docTable);
-        if (docTable.getColumnModel().getColumnCount() > 0) {
-            docTable.getColumnModel().getColumn(0).setResizable(false);
-        }
+        docTable.getSelectionModel().addListSelectionListener(new
+            ListSelectionListener() {
+                @Override
+                public void valueChanged(ListSelectionEvent e) {
+                    int row = docTable.getSelectedRow();
 
-        mainLayout.add(tableScrollPane);
-        tableScrollPane.setBounds(10, 50, 530, 220);
+                    if(row >= 0 && !e.getValueIsAdjusting() && !docTable.getSelectionModel()
+                        .isSelectionEmpty()) {
+                        String file = docTable.getValueAt(row, 0).toString();
 
-        getContentPane().add(mainLayout);
-
-        fileMenu.setText("File");
-
-        openMenu.setText("Open");
-        openMenu.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                openMenuActionPerformed(evt);
+                        if(file.endsWith(".json")) {
+                            openFile(file);
+                        }
+                    }
+                }
+            });
+            tableScrollPane.setViewportView(docTable);
+            if (docTable.getColumnModel().getColumnCount() > 0) {
+                docTable.getColumnModel().getColumn(0).setResizable(false);
             }
-        });
-        fileMenu.add(openMenu);
 
-        exitMenu.setText("Exit");
-        exitMenu.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                exitMenuActionPerformed(evt);
-            }
-        });
-        fileMenu.add(exitMenu);
+            mainLayout.add(tableScrollPane);
+            tableScrollPane.setBounds(10, 50, 530, 220);
 
-        jMenuBar1.add(fileMenu);
+            getContentPane().add(mainLayout);
 
-        viewMenu.setText("View");
+            fileMenu.setText("File");
 
-        vocabMenu.setText("Vocabulary");
-        vocabMenu.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                vocabMenuActionPerformed(evt);
-            }
-        });
-        viewMenu.add(vocabMenu);
+            openMenu.setText("Open");
+            openMenu.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    openMenuActionPerformed(evt);
+                }
+            });
+            fileMenu.add(openMenu);
 
-        jMenuBar1.add(viewMenu);
+            exitMenu.setText("Exit");
+            exitMenu.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    exitMenuActionPerformed(evt);
+                }
+            });
+            fileMenu.add(exitMenu);
 
-        setJMenuBar(jMenuBar1);
+            jMenuBar1.add(fileMenu);
 
-        pack();
-    }// </editor-fold>//GEN-END:initComponents
+            viewMenu.setText("View");
+
+            vocabMenu.setText("Vocabulary");
+            vocabMenu.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    vocabMenuActionPerformed(evt);
+                }
+            });
+            viewMenu.add(vocabMenu);
+
+            jMenuBar1.add(viewMenu);
+
+            setJMenuBar(jMenuBar1);
+
+            pack();
+        }// </editor-fold>//GEN-END:initComponents
 
     private void exitMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitMenuActionPerformed
         System.exit(0);
@@ -227,6 +258,33 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         model.addRow(new Object[]{fileNames.size() + " documents found."});
     }//GEN-LAST:event_searchButtonActionPerformed
 
+    private void openFile(String file) {
+        JFrame frame = new JFrame(file);
+        frame.setMinimumSize(new Dimension(800, 600));
+        JPanel panel = new JPanel();
+        panel.setLayout(new GridLayout(1,0));
+        JLabel label = new JLabel(); 
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        
+        try {
+            NPSDocument json = gson.fromJson(new FileReader(fileChooser
+                    .getSelectedFile() + "\\" + file), NPSDocument.class);
+            label.setText("<html><div WIDTH=600px>" + json.title + "<br>"
+                    + json.body + "<br>" + json.url + "</div><html>");
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(SearchEngineGUI.class.getName())
+                    .log(Level.SEVERE, null, ex);
+        }
+
+        label.setHorizontalAlignment(JLabel.LEFT);
+        label.setVerticalAlignment(JLabel.NORTH);
+        panel.add(label);
+        JScrollPane scrollBar = new JScrollPane(panel);
+        frame.add(scrollBar);
+        frame.pack();
+        frame.setVisible(true);
+    }
+    
     /**
      * @param args the command line arguments
      */
@@ -262,6 +320,12 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         });
     }
 
+    class NPSDocument {
+	String title;
+	String body;
+	String url;
+    }
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JTable docTable;
     private javax.swing.JMenuItem exitMenu;

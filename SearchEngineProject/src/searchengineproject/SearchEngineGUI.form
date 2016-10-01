@@ -158,6 +158,9 @@
                   <TableHeader reorderingAllowed="true" resizingAllowed="true"/>
                 </Property>
               </Properties>
+              <AuxValues>
+                <AuxValue name="JavaCodeGenerator_ListenersCodePost" type="java.lang.String" value="docTable.getSelectionModel().addListSelectionListener(new &#xa; ListSelectionListener() {&#xa;    @Override&#xa;    public void valueChanged(ListSelectionEvent e) {&#xa;        int row = docTable.getSelectedRow();&#xa;&#xa;        if(row &gt;= 0 &amp;&amp; !e.getValueIsAdjusting() &amp;&amp; !docTable.getSelectionModel()&#xa;         .isSelectionEmpty()) {&#xa;            String file = docTable.getValueAt(row, 0).toString();&#xa;&#xa;            if(file.endsWith(&quot;.json&quot;)) {&#xa;                openFile(file);&#xa;            }&#xa;        }&#xa;    }&#xa;});"/>
+              </AuxValues>
             </Component>
           </SubComponents>
         </Container>
