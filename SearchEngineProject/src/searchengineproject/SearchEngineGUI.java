@@ -9,6 +9,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
@@ -172,7 +173,8 @@ public class SearchEngineGUI extends javax.swing.JFrame {
             try {
                 sep.indexDirectory(path);
                 JOptionPane.showMessageDialog(this, "Successfully indexed "
-                        + sep.getFileNames().size() + " files.");
+                        + sep.getFileNames().size() + " files.", "Indexed",
+                        JOptionPane.INFORMATION_MESSAGE);
             } catch (IOException ex) {
                 Logger.getLogger(SearchEngineGUI.class.getName())
                         .log(Level.SEVERE, null, ex);
@@ -200,12 +202,29 @@ public class SearchEngineGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_vocabMenuActionPerformed
 
     private void stemButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_stemButtonActionPerformed
-        // TODO GRAB TEXT FROM SEARCHBAR, STEM TOKEN, OUTPUT TO TABLE
+        String token = searchBar.getText();
+        String columnNames[] = new String[] {"Stemmed Term"};
+        DefaultTableModel model = (DefaultTableModel) docTable.getModel();
+        model.setRowCount(0);
+        model.setColumnIdentifiers(columnNames);
+        
+        model.addRow(new Object[]{PorterStemmer.processToken(token)});        
     }//GEN-LAST:event_stemButtonActionPerformed
 
     private void searchButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchButtonActionPerformed
+        String query = searchBar.getText();
+        String columnNames[] = new String[] {"Documents"};
+        DefaultTableModel model = (DefaultTableModel) docTable.getModel();
+        model.setRowCount(0);
+        model.setColumnIdentifiers(columnNames);
         
+        ArrayList<String> fileNames = sep.searchResults(query);
         
+        for(String file : fileNames) {
+            model.addRow(new Object[]{file});
+        }
+        
+        model.addRow(new Object[]{fileNames.size() + " documents found."});
     }//GEN-LAST:event_searchButtonActionPerformed
 
     /**

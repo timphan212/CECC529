@@ -163,7 +163,7 @@ public class SearchEngineProject {
      * Parses the search query to perform the specified operation
      * @param query a string representing the search query
      */
-    private void parseQuery(String query) throws IOException {
+    /*private void parseQuery(String query) throws IOException {
         String[] queryTokens = query.split(" ");
         Scanner scan = new Scanner(System.in);
         
@@ -200,7 +200,7 @@ public class SearchEngineProject {
         }
         
         scan.close();
-    }
+    }*/
     
     /**
      * Print out all the terms in the vocabulary of the corpus
@@ -223,7 +223,7 @@ public class SearchEngineProject {
      * user
      * @param query the query to search the index with
      */
-    private void searchResults(String query) {
+    public ArrayList<String> searchResults(String query) {
         String[] tokens = query.split(" ");
         ArrayList<Integer> files1 = new ArrayList<>();
         ArrayList<ArrayList<PositionalPosting>> phraseList = new ArrayList<>();
@@ -232,7 +232,7 @@ public class SearchEngineProject {
         
         // print out the files for only one literal
         if(tokens.length == 1) {
-            printFiles(searchToken(tokens[0]));
+            return printFiles(searchToken(tokens[0]));
         }
         // there is more than one literal and needs extra parsing
         else {
@@ -277,7 +277,7 @@ public class SearchEngineProject {
             // add the last file list to the lists of files
             fileList.add(files1);
             // OR the queries together and print it out
-            printFiles(orFileLists(fileList));
+            return printFiles(orFileLists(fileList));
         }
     }
     
@@ -448,13 +448,17 @@ public class SearchEngineProject {
      * Prints out the document name and the number of documents found
      * @param files a list of integers representing the files
      */
-    private void printFiles(ArrayList<Integer> files) {
+    private ArrayList<String> printFiles(ArrayList<Integer> files) {
+        ArrayList<String> fileResults = new ArrayList<>();
+        
         // loop through the list of files
         for(Integer file : files) {
-            System.out.println(fileNames.get(file));
+            //System.out.println(fileNames.get(file));
+            fileResults.add(fileNames.get(file));
         }
         
-        System.out.println(files.size() + " documents found.");
+        //System.out.println(files.size() + " documents found.");
+        return fileResults;
     }
 }
 
