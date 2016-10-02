@@ -13,12 +13,10 @@ import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Scanner;
 
 /**
  *
@@ -28,6 +26,7 @@ public class SearchEngineProject {
     private List<String> fileNames = new ArrayList<>();
     private PositionalInvertedIndex index = new 
         PositionalInvertedIndex();
+    private BiwordIndex bindex = new BiwordIndex();
     
     public PositionalInvertedIndex getPositionalInvertedIndex() {
         return index;
@@ -37,34 +36,9 @@ public class SearchEngineProject {
         return fileNames;
     }
     
-    /**
-     * @param args the command line arguments
-     */
-    /*public static void main(String[] args) throws IOException {
-        // ask the user for the directory to index
-        Scanner scan = new Scanner(System.in);
-        System.out.print("Enter a directory to index: ");
-        String dir = scan.next();
-        
-        // concat the directory to the end of the main directory
-        final Path currentWorkingPath = Paths.get(Paths.get("").toAbsolutePath()
-                + "\\" + dir);
-        System.out.println("Indexing " + dir);
-        
-        // index the directory and retrieve a list of file names
-        indexDirectory(currentWorkingPath);
-        System.out.println("Successfully indexed " + fileNames.size()
-                + " files.\n");
-        System.out.print("Enter a search query: ");
-        
-        // retrieve the search query from user and parse
-        scan.nextLine();
-        String query = scan.nextLine();
-        parseQuery(query);
-        
-        scan.close();
-        
-    }*/
+    public BiwordIndex getBiwordIndex() {
+        return bindex;
+    }
     
     /**
      * Goes through each file in the directory and indexes the file by adding
@@ -98,7 +72,6 @@ public class SearchEngineProject {
                     // we have found a .json file; add its name to the fileName
                     // list, then index the file and increase the document ID
                     // counter.
-
                     fileNames.add(file.getFileName().toString());
                     indexFile(file.toFile(), mDocumentID);
                     mDocumentID++;
@@ -139,14 +112,30 @@ public class SearchEngineProject {
             // Get the list of terms
             ArrayList<String> terms = tokeStream.nextTokens();
             int counter = 0;
+            String prevWord = "";
             
             while(terms != null) {
                 // Loop through the list of terms
-                for(String term : terms) {
-                    // Stem the term
-                    term = PorterStemmer.processToken(term);
-                    // Add the term to the index
-                    index.addTerm(term, docID, counter);
+                for(int i = 0; i < terms.size(); i++) {
+                    // check if the term is empty
+                    if(terms.get(i).compareTo("") != 0) {
+                        // grab the first term
+                        if(counter == 0) {
+                            prevWord = terms.get(i);
+                        }
+                        // check if the stream is past the first term then
+                        // combine the previous term with the next term and
+                        // add it to the biword index
+                        if(counter > 0 && i == 0) {
+                            bindex.addTerm(PorterStemmer.processToken(prevWord)
+                                    + " " + PorterStemmer
+                                            .processToken(terms.get(i)), docID);
+                            prevWord = terms.get(i);
+                        }
+                        // Stem and add the term to the index
+                        index.addTerm(PorterStemmer.processToken(terms.get(i)),
+                                docID, counter);
+                    }
                 }
                 
                 // Get the next list of terms
@@ -160,65 +149,6 @@ public class SearchEngineProject {
     }
     
     /**
-     * Parses the search query to perform the specified operation
-     * @param query a string representing the search query
-     */
-    /*private void parseQuery(String query) throws IOException {
-        String[] queryTokens = query.split(" ");
-        Scanner scan = new Scanner(System.in);
-        
-        while(queryTokens[0].compareTo(":q") != 0) {
-            switch(queryTokens[0]) {
-                case ":stem":
-                    // porter stem term
-                    System.out.println(PorterStemmer
-                            .processToken(queryTokens[1]));
-                    break;
-                case ":index":
-                    // index the specified directory
-                    final Path currentWorkingPath = Paths.get(Paths.get("")
-                            .toAbsolutePath() + "\\" + queryTokens[1]);
-                    indexDirectory(currentWorkingPath);
-                    System.out.println("Successfully indexed " + 
-                            fileNames.size() + " files.");
-                    break;
-                case ":vocab":
-                    // print all terms in the vocabulary of the corpus
-                    printVocab();
-                    break;
-                default:
-                    //do the search query
-                    String formatQuery = query.toLowerCase();
-                    formatQuery = formatQuery.replaceAll("[-]+|[\']", "");
-                    searchResults(formatQuery);
-                    break;
-            }
-            
-            System.out.print("\nEnter a search query: ");
-            query = scan.nextLine();
-            queryTokens = query.split(" ");
-        }
-        
-        scan.close();
-    }*/
-    
-    /**
-     * Print out all the terms in the vocabulary of the corpus
-     */
-    /*public void printVocab() {
-        // Get the list of terms in the corpus
-        String[] terms = index.getTerms();
-        
-        // Loop through each term to print them out
-        for(String term : terms) {
-            System.out.println(term);
-        }
-        
-        // Print out the count of the total number
-        System.out.println(index.getTermCount());
-    }*/
-    
-    /**
      * Searches the index for the query and merge the results to display to the
      * user
      * @param query the query to search the index with
@@ -228,7 +158,8 @@ public class SearchEngineProject {
         ArrayList<Integer> files1 = new ArrayList<>();
         ArrayList<ArrayList<PositionalPosting>> phraseList = new ArrayList<>();
         ArrayList<ArrayList<Integer>> fileList = new ArrayList<>();
-        boolean orFlag = false, phraseFlag = false;
+        boolean orFlag = false, phraseFlag = false, biwordFlag = false;
+        String prevWord = "";
         
         // print out the files for only one literal
         if(tokens.length == 1) {
@@ -240,18 +171,54 @@ public class SearchEngineProject {
             for(int i = 0; i < tokens.length; i++) {
                 // check if the token starts with a quotation mark
                 if(tokens[i].startsWith("\"")) {
-                    phraseList.add(index.getPositionalPosting(PorterStemmer
-                            .processToken(tokens[i].substring(1))));
-                    phraseFlag = true;
+                    // check if the token after ends with a quotation mark
+                    // to use biword index instead
+                    if(tokens[i+1].endsWith("\"")) {
+                        biwordFlag = true;
+                        prevWord = PorterStemmer.processToken(tokens[i]
+                                .substring(1));
+                    }
+                    else {
+                        phraseList.add(index.getPositionalPosting(PorterStemmer
+                                .processToken(tokens[i].substring(1))));
+                        phraseFlag = true;
+                    }
                 }
-                // check if the token ends with a quotation mark
-                else if(tokens[i].endsWith("\"")) {
+                // if the token ends with a quotation mark and the biword flag
+                // is set then combine the two terms and check
+                else if(tokens[i].endsWith("\"") && biwordFlag == true) {
+                    biwordFlag = false;
+                    
+                    if(orFlag == false) {
+                        files1 = mergeFileLists(files1, bindex.getFileList
+                                (prevWord + " " + PorterStemmer
+                                .processToken(tokens[i].substring
+                                (0, tokens[i].length()-1))));
+                    }
+                    else {
+                        files1 = bindex.getFileList
+                                (prevWord + " " + PorterStemmer
+                                .processToken(tokens[i].substring
+                                (0, tokens[i].length()-1)));
+                        orFlag = false;
+                    }
+                }
+                // check if the token ends with a quotation mark and the phrase
+                // is larger than 2
+                else if(tokens[i].endsWith("\"") && biwordFlag == false) {
                     phraseList.add(index.getPositionalPosting(PorterStemmer
                             .processToken(tokens[i].substring(0, tokens[i]
-                                    .length()-1))));
+                            .length()-1))));
                     phraseFlag = false;
-                    files1 = mergeFileLists(files1, 
-                            phraseMergeFileLists(phraseList));
+                    
+                    if(orFlag == false) {
+                        files1 = mergeFileLists(files1, 
+                                phraseMergeFileLists(phraseList));
+                    }
+                    else {
+                        files1 = phraseMergeFileLists(phraseList);
+                        orFlag = false;
+                    }
                 }
                 // check if the phrase flag is true then add to the phrase list
                 else if(phraseFlag == true) {
@@ -456,10 +423,98 @@ public class SearchEngineProject {
             //System.out.println(fileNames.get(file));
             fileResults.add(fileNames.get(file));
         }
-        
+
         //System.out.println(files.size() + " documents found.");
         return fileResults;
     }
+            
+    /**
+     * @param args the command line arguments
+     */
+    /*public static void main(String[] args) throws IOException {
+        // ask the user for the directory to index
+        Scanner scan = new Scanner(System.in);
+        System.out.print("Enter a directory to index: ");
+        String dir = scan.next();
+        
+        // concat the directory to the end of the main directory
+        final Path currentWorkingPath = Paths.get(Paths.get("").toAbsolutePath()
+                + "\\" + dir);
+        System.out.println("Indexing " + dir);
+        
+        // index the directory and retrieve a list of file names
+        indexDirectory(currentWorkingPath);
+        System.out.println("Successfully indexed " + fileNames.size()
+                + " files.\n");
+        System.out.print("Enter a search query: ");
+        
+        // retrieve the search query from user and parse
+        scan.nextLine();
+        String query = scan.nextLine();
+        parseQuery(query);
+        
+        scan.close();
+        
+    }*/
+    
+    /**
+     * Parses the search query to perform the specified operation
+     * @param query a string representing the search query
+     */
+    /*private void parseQuery(String query) throws IOException {
+        String[] queryTokens = query.split(" ");
+        Scanner scan = new Scanner(System.in);
+        
+        while(queryTokens[0].compareTo(":q") != 0) {
+            switch(queryTokens[0]) {
+                case ":stem":
+                    // porter stem term
+                    System.out.println(PorterStemmer
+                            .processToken(queryTokens[1]));
+                    break;
+                case ":index":
+                    // index the specified directory
+                    final Path currentWorkingPath = Paths.get(Paths.get("")
+                            .toAbsolutePath() + "\\" + queryTokens[1]);
+                    indexDirectory(currentWorkingPath);
+                    System.out.println("Successfully indexed " + 
+                            fileNames.size() + " files.");
+                    break;
+                case ":vocab":
+                    // print all terms in the vocabulary of the corpus
+                    printVocab();
+                    break;
+                default:
+                    //do the search query
+                    String formatQuery = query.toLowerCase();
+                    formatQuery = formatQuery.replaceAll("[-]+|[\']", "");
+                    searchResults(formatQuery);
+                    break;
+            }
+            
+            System.out.print("\nEnter a search query: ");
+            query = scan.nextLine();
+            queryTokens = query.split(" ");
+        }
+        
+        scan.close();
+    }*/
+    
+    /**
+     * Print out all the terms in the vocabulary of the corpus
+     */
+    /*public void printVocab() {
+        // Get the list of terms in the corpus
+        String[] terms = index.getTerms();
+        
+        // Loop through each term to print them out
+        for(String term : terms) {
+            System.out.println(term);
+        }
+        
+        // Print out the count of the total number
+        System.out.println(index.getTermCount());
+    }*/
 }
 
 class NPSDocument {

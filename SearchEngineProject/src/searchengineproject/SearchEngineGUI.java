@@ -9,16 +9,13 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.awt.Dimension;
 import java.awt.GridLayout;
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
@@ -68,6 +65,7 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         exitMenu = new javax.swing.JMenuItem();
         viewMenu = new javax.swing.JMenu();
         vocabMenu = new javax.swing.JMenuItem();
+        biwordVocab = new javax.swing.JMenuItem();
 
         fileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
@@ -183,6 +181,14 @@ public class SearchEngineGUI extends javax.swing.JFrame {
             });
             viewMenu.add(vocabMenu);
 
+            biwordVocab.setText("Biword Vocabulary");
+            biwordVocab.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    biwordVocabActionPerformed(evt);
+                }
+            });
+            viewMenu.add(biwordVocab);
+
             jMenuBar1.add(viewMenu);
 
             setJMenuBar(jMenuBar1);
@@ -244,6 +250,7 @@ public class SearchEngineGUI extends javax.swing.JFrame {
 
     private void searchButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchButtonActionPerformed
         String query = searchBar.getText();
+        query = query.replaceAll("[-]+|[\']", "");
         String columnNames[] = new String[] {"Documents"};
         DefaultTableModel model = (DefaultTableModel) docTable.getModel();
         model.setRowCount(0);
@@ -257,6 +264,21 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         
         model.addRow(new Object[]{fileNames.size() + " documents found."});
     }//GEN-LAST:event_searchButtonActionPerformed
+
+    private void biwordVocabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_biwordVocabActionPerformed
+        String[] terms = sep.getBiwordIndex().getTerms();
+        int termCount = sep.getBiwordIndex().getTermCount();
+        String columnNames[] = new String[] {"Terms"};
+        DefaultTableModel model = (DefaultTableModel) docTable.getModel();
+        model.setRowCount(0);
+        model.setColumnIdentifiers(columnNames);
+        
+        for(String term : terms) {
+            model.addRow(new Object[]{term});
+        }
+        
+        model.addRow(new Object[]{termCount + " terms in the index."});
+    }//GEN-LAST:event_biwordVocabActionPerformed
 
     private void openFile(String file) {
         JFrame frame = new JFrame(file);
@@ -327,6 +349,7 @@ public class SearchEngineGUI extends javax.swing.JFrame {
     }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
+    private javax.swing.JMenuItem biwordVocab;
     private javax.swing.JTable docTable;
     private javax.swing.JMenuItem exitMenu;
     private javax.swing.JFileChooser fileChooser;
