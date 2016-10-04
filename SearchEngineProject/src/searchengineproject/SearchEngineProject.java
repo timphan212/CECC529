@@ -109,40 +109,49 @@ public class SearchEngineProject {
                     NPSDocument.class);
             // pass the body string to the token stream
             SimpleTokenStream tokeStream = new SimpleTokenStream(npsDoc.body);
-            // Get the list of terms
-            ArrayList<String> terms = tokeStream.nextTokens();
+            String term = tokeStream.nextToken();
             int counter = 0;
             String prevWord = "";
             
-            while(terms != null) {
-                // Loop through the list of terms
-                for(int i = 0; i < terms.size(); i++) {
-                    // check if the term is empty
-                    if(terms.get(i).compareTo("") != 0) {
-                        // grab the first term
-                        if(counter == 0) {
-                            prevWord = terms.get(i);
+            while(term != null) {
+                if(term.compareTo("") != 0) {
+                    if(counter == 0) {
+                        if(term.contains("-")) {
+                            term = term.replace("-", "");
                         }
-                        // check if the stream is past the first term then
-                        // combine the previous term with the next term and
-                        // add it to the biword index
-                        if(counter > 0 && i == 0) {
-                            bindex.addTerm(PorterStemmer.processToken(prevWord)
-                                    + " " + PorterStemmer
-                                            .processToken(terms.get(i)), docID);
-                            prevWord = terms.get(i);
+                        
+                        prevWord = term;
+                    }
+                    else {
+                        if(term.contains("-")) {
+                            term = term.replace("-", "");
                         }
-                        // Stem and add the term to the index
-                        index.addTerm(PorterStemmer.processToken(terms.get(i)),
+                        
+                        bindex.addTerm(PorterStemmer.processToken(prevWord)
+                            + " " + PorterStemmer
+                            .processToken(term), docID);
+                        prevWord = term;
+                    }
+                    if(term.contains("-")) {
+                        index.addTerm(PorterStemmer.processToken(term
+                                .replace("-", "")), docID, counter);
+                        String[] hyphenWord = term.split("-");
+                        
+                        for(String word : hyphenWord) {
+                            index.addTerm(PorterStemmer.processToken(word),
                                 docID, counter);
+                        }
+                    }
+                    else {
+                        index.addTerm(PorterStemmer.processToken(term),
+                            docID, counter);
                     }
                 }
                 
-                // Get the next list of terms
-                terms = tokeStream.nextTokens();
-                // Increment the position counter
+                term = tokeStream.nextToken();
                 counter++;
             }
+
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
