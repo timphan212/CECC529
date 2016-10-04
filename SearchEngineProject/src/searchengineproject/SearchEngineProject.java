@@ -72,6 +72,7 @@ public class SearchEngineProject {
                     // we have found a .json file; add its name to the fileName
                     // list, then index the file and increase the document ID
                     // counter.
+                    System.out.println(file.getFileName().toString());
                     fileNames.add(file.getFileName().toString());
                     indexFile(file.toFile(), mDocumentID);
                     mDocumentID++;
@@ -105,33 +106,38 @@ public class SearchEngineProject {
         try {
             // use GSON to grab the body tag from the document
             Gson gson = new Gson();
+            // open the file with gson
             NPSDocument npsDoc = gson.fromJson(new FileReader(file),
                     NPSDocument.class);
             // pass the body string to the token stream
             SimpleTokenStream tokeStream = new SimpleTokenStream(npsDoc.body);
+            // get the next token in the stream
             String term = tokeStream.nextToken();
+            // counter to keep track of position
             int counter = 0;
+            // string to keep track of the previous word for biword
             String prevWord = "";
             
+            // loop until the term returned is null
             while(term != null) {
+                // skip the term if the word is empty
                 if(term.compareTo("") != 0) {
+                    // save the first word in the file as the previous word
                     if(counter == 0) {
-                        if(term.contains("-")) {
-                            term = term.replace("-", "");
-                        }
-                        
                         prevWord = term;
                     }
+                    // stem the previous token and the current token then add to
+                    // the biword index and set the previous word to the current
+                    // word
                     else {
-                        if(term.contains("-")) {
-                            term = term.replace("-", "");
-                        }
-                        
                         bindex.addTerm(PorterStemmer.processToken(prevWord)
                             + " " + PorterStemmer
                             .processToken(term), docID);
                         prevWord = term;
                     }
+                    // if the term contains a hyphen then remove the hyphen and
+                    // stem then index the token, then split the string by
+                    // the hyphen, stem and add each word individually
                     if(term.contains("-")) {
                         index.addTerm(PorterStemmer.processToken(term
                                 .replace("-", "")), docID, counter);
@@ -142,12 +148,13 @@ public class SearchEngineProject {
                                 docID, counter);
                         }
                     }
+                    // stem and add the token to the positional inverted index
                     else {
                         index.addTerm(PorterStemmer.processToken(term),
                             docID, counter);
                     }
                 }
-                
+                // get the next token and increment the position counter
                 term = tokeStream.nextToken();
                 counter++;
             }
@@ -187,6 +194,8 @@ public class SearchEngineProject {
                         prevWord = PorterStemmer.processToken(tokens[i]
                                 .substring(1));
                     }
+                    // the phrase length is not equal to two, have to add to
+                    // a phrase list then use the positional inverted index
                     else {
                         phraseList.add(index.getPositionalPosting(PorterStemmer
                                 .processToken(tokens[i].substring(1))));
@@ -197,13 +206,16 @@ public class SearchEngineProject {
                 // is set then combine the two terms and check
                 else if(tokens[i].endsWith("\"") && biwordFlag == true) {
                     biwordFlag = false;
-                    
+                    // or flag is false then need to AND the phrase query with
+                    //the previous token in the query
                     if(orFlag == false) {
                         files1 = mergeFileLists(files1, bindex.getFileList
                                 (prevWord + " " + PorterStemmer
                                 .processToken(tokens[i].substring
                                 (0, tokens[i].length()-1))));
                     }
+                    // or flag is true need to set files1 equal to the results
+                    // from biword index to add to the orFileLists
                     else {
                         files1 = bindex.getFileList
                                 (prevWord + " " + PorterStemmer

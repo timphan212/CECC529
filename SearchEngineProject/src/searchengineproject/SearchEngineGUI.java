@@ -199,7 +199,11 @@ public class SearchEngineGUI extends javax.swing.JFrame {
     private void exitMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_exitMenuActionPerformed
         System.exit(0);
     }//GEN-LAST:event_exitMenuActionPerformed
-
+    /**
+     * Opens up the file chooser to let the user select a directory then index
+     * the directory and pop up a dialog specifying how many files were indexed
+     * @param evt 
+     */
     private void openMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openMenuActionPerformed
         if(fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             File dir = fileChooser.getSelectedFile();
@@ -219,10 +223,20 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         }   
     }//GEN-LAST:event_openMenuActionPerformed
 
+    /**
+     * Calls the search button event when the user pushes enter in the search
+     * bar
+     * @param evt 
+     */
     private void searchBarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchBarActionPerformed
         searchButtonActionPerformed(evt);
     }//GEN-LAST:event_searchBarActionPerformed
-
+    
+    /**
+     * Creates the vocabulary table for the positional inverted index when
+     * selected from the drop-down menu
+     * @param evt 
+     */
     private void vocabMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_vocabMenuActionPerformed
         String[] terms = sep.getPositionalInvertedIndex().getTerms();
         int termCount = sep.getPositionalInvertedIndex().getTermCount();
@@ -237,7 +251,12 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         
         model.addRow(new Object[]{termCount + " terms in the index."});
     }//GEN-LAST:event_vocabMenuActionPerformed
-
+    
+    /**
+     * Stem the query in the search bar when the stem button is pushed and
+     * output the stemmed word in the table
+     * @param evt 
+     */
     private void stemButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_stemButtonActionPerformed
         String token = searchBar.getText();
         String columnNames[] = new String[] {"Stemmed Term"};
@@ -248,6 +267,11 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         model.addRow(new Object[]{PorterStemmer.processToken(token)});        
     }//GEN-LAST:event_stemButtonActionPerformed
 
+    /**
+     * Retrieves the string variable from the search bar then get the results
+     * for the query to display in the table
+     * @param evt 
+     */
     private void searchButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchButtonActionPerformed
         String query = searchBar.getText();
         query = query.replaceAll("[-]+|[\']", "");
@@ -265,6 +289,11 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         model.addRow(new Object[]{fileNames.size() + " documents found."});
     }//GEN-LAST:event_searchButtonActionPerformed
 
+    /**
+     * Displays the vocabulary for the biword index when selected from the
+     * drop-down menu in the table
+     * @param evt 
+     */
     private void biwordVocabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_biwordVocabActionPerformed
         String[] terms = sep.getBiwordIndex().getTerms();
         int termCount = sep.getBiwordIndex().getTermCount();
@@ -280,6 +309,11 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         model.addRow(new Object[]{termCount + " terms in the index."});
     }//GEN-LAST:event_biwordVocabActionPerformed
 
+    /**
+     * When a user clicks on the file it opens a new window containing the
+     * contents of the file
+     * @param file 
+     */
     private void openFile(String file) {
         JFrame frame = new JFrame(file);
         frame.setMinimumSize(new Dimension(800, 600));

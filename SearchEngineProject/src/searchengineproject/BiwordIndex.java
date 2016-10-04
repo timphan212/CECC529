@@ -50,14 +50,27 @@ public class BiwordIndex {
         }
     }
     
+    /**
+     * Return the file list of the term
+     * @param term a string representing the term
+     * @return 
+     */
     public ArrayList<Integer> getFileList(String term) {
         return mIndex.get(term);
     }
     
+    /**
+     * Return the size of the index
+     * @return an integer value representing the size of the index
+     */
     public int getTermCount() {
         return mIndex.size();
     }
         
+    /**
+     * Gets the list of all the terms
+     * @return a string array containing all the terms
+     */
     public String[] getTerms() {
         String[] terms = mIndex.keySet().toArray(new String[mIndex.size()]);
         Arrays.sort(terms);
