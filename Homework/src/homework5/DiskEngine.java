@@ -1,10 +1,12 @@
 package homework5;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Scanner;
 
 
 public class DiskEngine {
 
-   public static void main(String[] args) {
+   public static void main(String[] args) throws IOException {
       Scanner scan = new Scanner(System.in);
 
       System.out.println("Menu:");
@@ -38,7 +40,7 @@ public class DiskEngine {
                   break;
                }
 
-               int[] postingsList = index.GetPostings(
+               ArrayList<PositionalPosting> postingsList = index.GetPostings(
                 PorterStemmer.processToken(input.toLowerCase())
                );
 
@@ -46,10 +48,11 @@ public class DiskEngine {
                   System.out.println("Term not found");
                }
                else {
-                  System.out.print("Docs: ");
-                  for (int post : postingsList) {
-                     System.out.print(index.getFileNames().get(post) + " ");
+                  System.out.println("Docs: ");
+                  for (PositionalPosting post : postingsList) {
+                     System.out.println(index.getFileNames(post.getDocID()));
                   }
+                  System.out.println(postingsList.size());
                   System.out.println();
                   System.out.println();
                }
