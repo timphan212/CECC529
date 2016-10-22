@@ -155,11 +155,13 @@ public class ParseQueries {
     private static ArrayList<String> printFiles(ArrayList<Integer> files,
             List<String> fileNames) {
         ArrayList<String> fileResults = new ArrayList<>();
-        
-        // loop through the list of files
-        for(Integer file : files) {
-            //System.out.println(fileNames.get(file));
-            fileResults.add(fileNames.get(file));
+
+        if(files != null) {
+            // loop through the list of files
+            for(Integer file : files) {
+                //System.out.println(fileNames.get(file));
+                fileResults.add(fileNames.get(file));
+            }
         }
 
         //System.out.println(files.size() + " documents found.");
