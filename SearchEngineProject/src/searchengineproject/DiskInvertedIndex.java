@@ -12,6 +12,8 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class DiskInvertedIndex {
 
@@ -33,8 +35,14 @@ public class DiskInvertedIndex {
         }
     }
 
-    private static ArrayList<PositionalPosting> readPostingsFromFile(RandomAccessFile postings,
-            long postingsPosition) {
+    /**
+     * Returns an array list of positional postings containing the positions
+     * @param postings postings file
+     * @param postingsPosition position inside the postings file
+     * @return array list of positional posting
+     */
+    private static ArrayList<PositionalPosting> readPositionalPostings (
+            RandomAccessFile postings, long postingsPosition) {
         try {
             // seek to the position in the file where the postings start.
             postings.seek(postingsPosition);
@@ -74,7 +82,57 @@ public class DiskInvertedIndex {
                 }
 
                 // create the positional posting list
-                PositionalPosting posPost = new PositionalPosting(documentID, positions);
+                PositionalPosting posPost = new PositionalPosting(documentID,
+                        termFrequency, positions);
+                posPostList.add(posPost);
+            }
+
+            return posPostList;
+        } catch (IOException ex) {
+            System.out.println(ex.toString());
+        }
+        return null;
+    }
+    
+    /**
+     * Returns an array list of positional postings without the positions
+     * @param postings posting files
+     * @param postingsPosition position inside the posting files
+     * @return array list of positional postings
+     */
+    private static ArrayList<PositionalPosting> readPostings (
+            RandomAccessFile postings, long postingsPosition) {
+        try {
+            // seek to the position in the file where the postings start.
+            postings.seek(postingsPosition);
+
+            // read the 4 bytes for the document frequency
+            byte[] buffer = new byte[4];
+            postings.read(buffer, 0, buffer.length);
+            
+            // use ByteBuffer to convert the 4 bytes into an int.
+            int documentFrequency = ByteBuffer.wrap(buffer).getInt();
+            
+            int lastDocId = 0;
+            ArrayList<PositionalPosting> posPostList = new ArrayList<>();
+            
+            for (int i = 0; i < documentFrequency; i++) {
+                // read the document id
+                byte[] docBuffer = new byte[4];
+                postings.read(docBuffer, 0, docBuffer.length);
+                int documentID = ByteBuffer.wrap(docBuffer).getInt() + lastDocId;
+                lastDocId = documentID;
+                
+                // read the term frequency
+                byte[] tfBuffer = new byte[4];
+                postings.read(tfBuffer, 0, tfBuffer.length);
+                int termFrequency = ByteBuffer.wrap(tfBuffer).getInt();
+                
+                postings.skipBytes(termFrequency*4);
+
+                // create the positional posting list
+                PositionalPosting posPost = new PositionalPosting(documentID,
+                        termFrequency);
                 posPostList.add(posPost);
             }
 
@@ -85,11 +143,18 @@ public class DiskInvertedIndex {
         return null;
     }
 
-    public ArrayList<PositionalPosting> GetPostings(String term) {
+    public ArrayList<PositionalPosting> GetPostings(String term,
+            boolean positions) {
         long postingsPosition = binarySearchVocabulary(term);
 
         if (postingsPosition >= 0) {
-            return readPostingsFromFile(mPostings, postingsPosition);
+            if(positions == true) {
+                return readPositionalPostings(mPostings, postingsPosition);
+            }
+            else {
+                return readPostings(mPostings, postingsPosition);
+            }
+            
         }
 
         return null;
@@ -146,7 +211,7 @@ public class DiskInvertedIndex {
             vocabTable = new long[ByteBuffer.wrap(byteBuffer).getInt() * 2];
             byteBuffer = new byte[8];
 
-            while (tableFile.read(byteBuffer, 0, byteBuffer.length) > 0) { // while we keep reading 4 bytes
+            while (tableFile.read(byteBuffer, 0, byteBuffer.length) > 0) {
                 vocabTable[tableIndex] = ByteBuffer.wrap(byteBuffer).getLong();
                 tableIndex++;
             }
@@ -204,7 +269,41 @@ public class DiskInvertedIndex {
         return names;
     }
     
+    public int getDocumentCount() {
+        return fileNames.size();
+    }
+    
     public String getFileNames(int docID) {
         return fileNames.get(docID);
+    }
+    
+    public ArrayList<String> getTerms() {
+        int termLength = 0;
+        ArrayList<String> terms = new ArrayList<>();
+        long vocabPos = 0;
+        byte[] buffer;
+        
+        for(int i = 0; i < mVocabTable.length; i+=2) {
+            try {
+                vocabPos = mVocabTable[i];
+                mVocabList.seek(vocabPos);
+                
+                if(i == mVocabTable.length - 2) {
+                    termLength = (int) (mVocabList.length() - mVocabTable[i]);
+                }
+                else {
+                    termLength = (int) (mVocabTable[i+2] - vocabPos);
+                }
+                
+                buffer = new byte[termLength];
+                mVocabList.read(buffer, 0, termLength);
+                terms.add(new String(buffer, "ASCII"));
+            } catch (IOException ex) {
+                Logger.getLogger(DiskInvertedIndex.class.getName())
+                        .log(Level.SEVERE, null, ex);
+            }
+        }
+        
+        return terms;
     }
 }

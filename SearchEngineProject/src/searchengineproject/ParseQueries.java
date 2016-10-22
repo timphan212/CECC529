@@ -6,7 +6,6 @@
 package searchengineproject;
 
 import java.util.ArrayList;
-import java.util.List;
 
 /**
  *
@@ -18,19 +17,18 @@ public class ParseQueries {
      * user
      * @param query the query to search the index with
      */
-    public static ArrayList<String> searchResults(String query, 
-            BiwordIndex bindex, PositionalInvertedIndex index,
-            List<String> fileNames) {
+    public static ArrayList<String> searchResults(String query,
+            DiskInvertedIndex dindex) {
         String[] tokens = query.split(" ");
         ArrayList<Integer> files1 = new ArrayList<>();
         ArrayList<ArrayList<PositionalPosting>> phraseList = new ArrayList<>();
         ArrayList<ArrayList<Integer>> fileList = new ArrayList<>();
         boolean orFlag = false, phraseFlag = false, biwordFlag = false;
         String prevWord = "";
-        
+
         // print out the files for only one literal
         if(tokens.length == 1) {
-            return printFiles(searchToken(tokens[0], index), fileNames);
+            return printFiles(searchToken(tokens[0], dindex), dindex);
         }
         // there is more than one literal and needs extra parsing
         else {
@@ -40,22 +38,22 @@ public class ParseQueries {
                 if(tokens[i].startsWith("\"")) {
                     // check if the token after ends with a quotation mark
                     // to use biword index instead
-                    if(tokens[i+1].endsWith("\"")) {
+                    /*if(tokens[i+1].endsWith("\"")) {
                         biwordFlag = true;
                         prevWord = PorterStemmer.processToken(tokens[i]
                                 .substring(1));
                     }
                     // the phrase length is not equal to two, have to add to
                     // a phrase list then use the positional inverted index
-                    else {
-                        phraseList.add(index.getPositionalPosting(PorterStemmer
-                                .processToken(tokens[i].substring(1))));
+                    else*/ {
+                        phraseList.add(dindex.GetPostings(PorterStemmer
+                                .processToken(tokens[i].substring(1)), true));
                         phraseFlag = true;
                     }
                 }
                 // if the token ends with a quotation mark and the biword flag
                 // is set then combine the two terms and check
-                else if(tokens[i].endsWith("\"") && biwordFlag == true) {
+               /*else if(tokens[i].endsWith("\"") && biwordFlag == true) {
                     biwordFlag = false;
                     // or flag is false then need to AND the phrase query with
                     //the previous token in the query
@@ -75,13 +73,13 @@ public class ParseQueries {
                                 (0, tokens[i].length()-1)));
                         orFlag = false;
                     }
-                }
+                }*/
                 // check if the token ends with a quotation mark and the phrase
                 // is larger than 2
                 else if(tokens[i].endsWith("\"") && biwordFlag == false) {
-                    phraseList.add(index.getPositionalPosting(PorterStemmer
+                    phraseList.add(dindex.GetPostings(PorterStemmer
                             .processToken(tokens[i].substring(0, tokens[i]
-                            .length()-1))));
+                            .length()-1)), true));
                     phraseFlag = false;
                     
                     if(orFlag == false) {
@@ -95,12 +93,12 @@ public class ParseQueries {
                 }
                 // check if the phrase flag is true then add to the phrase list
                 else if(phraseFlag == true) {
-                    phraseList.add(index.getPositionalPosting(PorterStemmer
-                                    .processToken(tokens[i])));
+                    phraseList.add(dindex.GetPostings(PorterStemmer
+                                    .processToken(tokens[i]), true));
                 }
                 // get the file list for the first token or if the flag was set
                 else if(i == 0 || orFlag == true) {
-                    files1 = searchToken(tokens[i], index);
+                    files1 = searchToken(tokens[i], dindex);
                     orFlag = false;
                 }
                 // the current token is a "+", add the current merged lists to
@@ -112,13 +110,13 @@ public class ParseQueries {
                 // merge the files (AND the queries)
                 else {
                     files1 = MergeQueries.mergeFileLists(files1,
-                            searchToken(tokens[i], index));
+                            searchToken(tokens[i], dindex));
                 }
             }
             // add the last file list to the lists of files
             fileList.add(files1);
             // OR the queries together and print it out
-            return printFiles(MergeQueries.orFileLists(fileList), fileNames);
+            return printFiles(MergeQueries.orFileLists(fileList), dindex);
         }
     }
     
@@ -130,13 +128,13 @@ public class ParseQueries {
      * located at
      */
     private static ArrayList<Integer> searchToken(String token, 
-            PositionalInvertedIndex index) {
+            DiskInvertedIndex index) {
         ArrayList<Integer> files = new ArrayList<>();
         token = token.replaceAll("[\"]", "");
         // stem the token and then get the list of postional postings for the
         // token
         ArrayList<PositionalPosting> pospostList = index
-                .getPositionalPosting(PorterStemmer.processToken(token));
+                .GetPostings(PorterStemmer.processToken(token), false);
         
         // if the token exists then add document id to a list
         if(pospostList != null) {
@@ -153,14 +151,14 @@ public class ParseQueries {
      * @param files a list of integers representing the files
      */
     private static ArrayList<String> printFiles(ArrayList<Integer> files,
-            List<String> fileNames) {
+            DiskInvertedIndex dindex) {
         ArrayList<String> fileResults = new ArrayList<>();
 
         if(files != null) {
             // loop through the list of files
             for(Integer file : files) {
                 //System.out.println(fileNames.get(file));
-                fileResults.add(fileNames.get(file));
+                fileResults.add(dindex.getFileNames(file));
             }
         }
 

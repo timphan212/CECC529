@@ -9,14 +9,10 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import java.awt.Dimension;
 import java.awt.GridLayout;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
@@ -34,11 +30,8 @@ import javax.swing.table.DefaultTableModel;
  * @author Timothy
  */
 public class SearchEngineGUI extends javax.swing.JFrame {
-    DirectoryIndex dindex = new DirectoryIndex();
-    BiwordIndex bindex = new BiwordIndex();
-    PositionalInvertedIndex index = new PositionalInvertedIndex();
-    List<String> fileNames = new ArrayList<>();
-    
+    String currentDirectory = "";
+    DiskInvertedIndex dindex = null;
     
     /**
      * Creates new form SearchEngineGUI
@@ -67,6 +60,7 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         jMenuBar1 = new javax.swing.JMenuBar();
         fileMenu = new javax.swing.JMenu();
         openMenu = new javax.swing.JMenuItem();
+        openExistingMenu = new javax.swing.JMenuItem();
         exitMenu = new javax.swing.JMenuItem();
         viewMenu = new javax.swing.JMenu();
         vocabMenu = new javax.swing.JMenuItem();
@@ -162,13 +156,21 @@ public class SearchEngineGUI extends javax.swing.JFrame {
 
             fileMenu.setText("File");
 
-            openMenu.setText("Open");
+            openMenu.setText("Open Directory");
             openMenu.addActionListener(new java.awt.event.ActionListener() {
                 public void actionPerformed(java.awt.event.ActionEvent evt) {
                     openMenuActionPerformed(evt);
                 }
             });
             fileMenu.add(openMenu);
+
+            openExistingMenu.setText("Open Existing Directory");
+            openExistingMenu.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                    openExistingMenuActionPerformed(evt);
+                }
+            });
+            fileMenu.add(openExistingMenu);
 
             exitMenu.setText("Exit");
             exitMenu.addActionListener(new java.awt.event.ActionListener() {
@@ -215,19 +217,14 @@ public class SearchEngineGUI extends javax.swing.JFrame {
      */
     private void openMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openMenuActionPerformed
         if(fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            File dir = fileChooser.getSelectedFile();
-            Path path = Paths.get(dir.getAbsolutePath());
-            dindex = new DirectoryIndex();
-            System.out.println("Indexing " + dir.getName());
-            
             try {
-                dindex.indexDirectory(path);
+                String currentDir = fileChooser.getSelectedFile()
+                        .toString();
+                DirectoryIndex.buildIndexForDirectory(currentDir);
+                dindex = new DiskInvertedIndex(currentDir);
                 JOptionPane.showMessageDialog(this, "Successfully indexed "
-                        + dindex.getFileNames().size() + " files.", "Indexed",
+                        + dindex.getDocumentCount() + " files.", "Indexed",
                         JOptionPane.INFORMATION_MESSAGE);
-                bindex = dindex.getBiwordIndex();
-                index = dindex.getPositionalInvertedIndex();
-                fileNames = dindex.getFileNames();
                 
             } catch (IOException ex) {
                 Logger.getLogger(SearchEngineGUI.class.getName())
@@ -251,8 +248,7 @@ public class SearchEngineGUI extends javax.swing.JFrame {
      * @param evt 
      */
     private void vocabMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_vocabMenuActionPerformed
-        String[] terms = dindex.getPositionalInvertedIndex().getTerms();
-        int termCount = dindex.getPositionalInvertedIndex().getTermCount();
+        ArrayList<String> terms = dindex.getTerms();
         String columnNames[] = new String[] {"Terms"};
         DefaultTableModel model = (DefaultTableModel) docTable.getModel();
         model.setRowCount(0);
@@ -262,7 +258,8 @@ public class SearchEngineGUI extends javax.swing.JFrame {
             model.addRow(new Object[]{term});
         }
         
-        docsFoundLabel.setText("Documents found: " + termCount);
+        
+        docsFoundLabel.setText("Documents found: " + dindex.getTermCount());
     }//GEN-LAST:event_vocabMenuActionPerformed
     
     /**
@@ -277,7 +274,8 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         model.setRowCount(0);
         model.setColumnIdentifiers(columnNames);
         
-        model.addRow(new Object[]{PorterStemmer.processToken(token)});        
+        model.addRow(new Object[]{PorterStemmer.processToken(token)});
+        docsFoundLabel.setText("Documents found: " + 0);
     }//GEN-LAST:event_stemButtonActionPerformed
 
     /**
@@ -293,8 +291,7 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         model.setRowCount(0);
         model.setColumnIdentifiers(columnNames);
 
-        ArrayList<String> results = ParseQueries.searchResults(query, bindex,
-                index, fileNames);
+        ArrayList<String> results = ParseQueries.searchResults(query, dindex);
         
         for(String file : results) {
             model.addRow(new Object[]{file});
@@ -309,7 +306,7 @@ public class SearchEngineGUI extends javax.swing.JFrame {
      * @param evt 
      */
     private void biwordVocabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_biwordVocabActionPerformed
-        String[] terms = dindex.getBiwordIndex().getTerms();
+        /*String[] terms = dindex.getBiwordIndex().getTerms();
         int termCount = dindex.getBiwordIndex().getTermCount();
         String columnNames[] = new String[] {"Terms"};
         DefaultTableModel model = (DefaultTableModel) docTable.getModel();
@@ -320,8 +317,24 @@ public class SearchEngineGUI extends javax.swing.JFrame {
             model.addRow(new Object[]{term});
         }
         
-        docsFoundLabel.setText("Documents found: " + termCount);
+        docsFoundLabel.setText("Documents found: " + termCount);*/
     }//GEN-LAST:event_biwordVocabActionPerformed
+
+    private void openExistingMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openExistingMenuActionPerformed
+        if(fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            try {
+                String currentDir = fileChooser.getSelectedFile()
+                        .toString();
+                dindex = new DiskInvertedIndex(currentDir);
+                JOptionPane.showMessageDialog(this, "Successfully indexed "
+                        + dindex.getDocumentCount() + " files.", "Indexed",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException ex) {
+                Logger.getLogger(SearchEngineGUI.class.getName())
+                        .log(Level.SEVERE, null, ex);
+            }
+        }  
+    }//GEN-LAST:event_openExistingMenuActionPerformed
 
     /**
      * When a user clicks on the file it opens a new window containing the
@@ -365,21 +378,21 @@ public class SearchEngineGUI extends javax.swing.JFrame {
          * For details see http://download.oracle.com/javase/tutorial/uiswing/lookandfeel/plaf.html 
          */
         try {
-            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing.UIManager.getInstalledLookAndFeels()) {
+            for (javax.swing.UIManager.LookAndFeelInfo info : javax.swing
+                    .UIManager.getInstalledLookAndFeels()) {
                 if ("Nimbus".equals(info.getName())) {
                     javax.swing.UIManager.setLookAndFeel(info.getClassName());
                     break;
                 }
             }
-        } catch (ClassNotFoundException ex) {
-            java.util.logging.Logger.getLogger(SearchEngineGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (InstantiationException ex) {
-            java.util.logging.Logger.getLogger(SearchEngineGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (IllegalAccessException ex) {
-            java.util.logging.Logger.getLogger(SearchEngineGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
-        } catch (javax.swing.UnsupportedLookAndFeelException ex) {
-            java.util.logging.Logger.getLogger(SearchEngineGUI.class.getName()).log(java.util.logging.Level.SEVERE, null, ex);
+        } catch (ClassNotFoundException | InstantiationException 
+                | IllegalAccessException 
+                | javax.swing.UnsupportedLookAndFeelException ex) {
+            java.util.logging.Logger.getLogger(SearchEngineGUI.class.getName())
+                    .log(java.util.logging.Level.SEVERE, null, ex);
         }
+        //</editor-fold>
+        
         //</editor-fold>
         
         /* Create and display the form */
@@ -405,6 +418,7 @@ public class SearchEngineGUI extends javax.swing.JFrame {
     private javax.swing.JMenu fileMenu;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JPanel mainLayout;
+    private javax.swing.JMenuItem openExistingMenu;
     private javax.swing.JMenuItem openMenu;
     private javax.swing.JTextField searchBar;
     private javax.swing.JButton searchButton;

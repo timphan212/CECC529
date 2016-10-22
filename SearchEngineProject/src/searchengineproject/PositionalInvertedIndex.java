@@ -72,7 +72,8 @@ public class PositionalInvertedIndex {
         // add the position to the list
         posList.add(position);
         // create a new positional posting for the new document
-        PositionalPosting pospost = new PositionalPosting(docID, posList);
+        PositionalPosting pospost = new PositionalPosting(docID, posList.size(),
+                posList);
         
         return pospost;
     }

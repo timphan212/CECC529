@@ -13,17 +13,26 @@ import java.util.ArrayList;
  */
 public class PositionalPosting {
     private int docID;
+    private int termFreq;
     private ArrayList<Integer> positions = new ArrayList<>();
     
     /**
      * Creates a new PositionalPosting object with the document id and list of
      * positions
      * @param docID document id containing the term
+     * @param termFreq term frequency in the document
      * @param positions list of positions the term can be found
      */
-    public PositionalPosting(int docID, ArrayList<Integer> positions) {
+    public PositionalPosting(int docID, int termFreq, 
+            ArrayList<Integer> positions) {
         this.docID = docID;
+        this.termFreq = termFreq;
         this.positions = positions;
+    }
+    
+    public PositionalPosting(int docID, int termFreq) {
+        this.docID = docID;
+        this.termFreq = termFreq;
     }
     
     /**
@@ -56,5 +65,23 @@ public class PositionalPosting {
      */
     public void setPositions(ArrayList<Integer> positions) {
         this.positions = positions;
+    }
+
+    /**
+     * @return the termFreq
+     */
+    public int getTermFreq() {
+        return termFreq;
+    }
+
+    /**
+     * @param termFreq the termFreq to set
+     */
+    public void setTermFreq(int termFreq) {
+        this.termFreq = termFreq;
+    }
+    
+    public boolean isPositionsEmpty() {
+        return positions.isEmpty();
     }
 }
