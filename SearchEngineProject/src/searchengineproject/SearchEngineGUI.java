@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
@@ -33,7 +34,10 @@ import javax.swing.table.DefaultTableModel;
  * @author Timothy
  */
 public class SearchEngineGUI extends javax.swing.JFrame {
-    SearchEngineProject sep = new SearchEngineProject();
+    DirectoryIndex dindex = new DirectoryIndex();
+    BiwordIndex bindex = new BiwordIndex();
+    PositionalInvertedIndex index = new PositionalInvertedIndex();
+    List<String> fileNames = new ArrayList<>();
     
     
     /**
@@ -59,6 +63,7 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         stemButton = new javax.swing.JButton();
         tableScrollPane = new javax.swing.JScrollPane();
         docTable = new javax.swing.JTable();
+        docsFoundLabel = new javax.swing.JLabel();
         jMenuBar1 = new javax.swing.JMenuBar();
         fileMenu = new javax.swing.JMenu();
         openMenu = new javax.swing.JMenuItem();
@@ -149,6 +154,10 @@ public class SearchEngineGUI extends javax.swing.JFrame {
             mainLayout.add(tableScrollPane);
             tableScrollPane.setBounds(10, 50, 530, 220);
 
+            docsFoundLabel.setText("Documents found:");
+            mainLayout.add(docsFoundLabel);
+            docsFoundLabel.setBounds(20, 280, 380, 14);
+
             getContentPane().add(mainLayout);
 
             fileMenu.setText("File");
@@ -208,14 +217,18 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         if(fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             File dir = fileChooser.getSelectedFile();
             Path path = Paths.get(dir.getAbsolutePath());
-            sep = new SearchEngineProject();
+            dindex = new DirectoryIndex();
             System.out.println("Indexing " + dir.getName());
             
             try {
-                sep.indexDirectory(path);
+                dindex.indexDirectory(path);
                 JOptionPane.showMessageDialog(this, "Successfully indexed "
-                        + sep.getFileNames().size() + " files.", "Indexed",
+                        + dindex.getFileNames().size() + " files.", "Indexed",
                         JOptionPane.INFORMATION_MESSAGE);
+                bindex = dindex.getBiwordIndex();
+                index = dindex.getPositionalInvertedIndex();
+                fileNames = dindex.getFileNames();
+                
             } catch (IOException ex) {
                 Logger.getLogger(SearchEngineGUI.class.getName())
                         .log(Level.SEVERE, null, ex);
@@ -238,8 +251,8 @@ public class SearchEngineGUI extends javax.swing.JFrame {
      * @param evt 
      */
     private void vocabMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_vocabMenuActionPerformed
-        String[] terms = sep.getPositionalInvertedIndex().getTerms();
-        int termCount = sep.getPositionalInvertedIndex().getTermCount();
+        String[] terms = dindex.getPositionalInvertedIndex().getTerms();
+        int termCount = dindex.getPositionalInvertedIndex().getTermCount();
         String columnNames[] = new String[] {"Terms"};
         DefaultTableModel model = (DefaultTableModel) docTable.getModel();
         model.setRowCount(0);
@@ -249,7 +262,7 @@ public class SearchEngineGUI extends javax.swing.JFrame {
             model.addRow(new Object[]{term});
         }
         
-        model.addRow(new Object[]{termCount + " terms in the index."});
+        docsFoundLabel.setText("Documents found: " + termCount);
     }//GEN-LAST:event_vocabMenuActionPerformed
     
     /**
@@ -279,14 +292,15 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         DefaultTableModel model = (DefaultTableModel) docTable.getModel();
         model.setRowCount(0);
         model.setColumnIdentifiers(columnNames);
+
+        ArrayList<String> results = ParseQueries.searchResults(query, bindex,
+                index, fileNames);
         
-        ArrayList<String> fileNames = sep.searchResults(query);
-        
-        for(String file : fileNames) {
+        for(String file : results) {
             model.addRow(new Object[]{file});
         }
         
-        model.addRow(new Object[]{fileNames.size() + " documents found."});
+        docsFoundLabel.setText("Documents found: " + results.size());
     }//GEN-LAST:event_searchButtonActionPerformed
 
     /**
@@ -295,8 +309,8 @@ public class SearchEngineGUI extends javax.swing.JFrame {
      * @param evt 
      */
     private void biwordVocabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_biwordVocabActionPerformed
-        String[] terms = sep.getBiwordIndex().getTerms();
-        int termCount = sep.getBiwordIndex().getTermCount();
+        String[] terms = dindex.getBiwordIndex().getTerms();
+        int termCount = dindex.getBiwordIndex().getTermCount();
         String columnNames[] = new String[] {"Terms"};
         DefaultTableModel model = (DefaultTableModel) docTable.getModel();
         model.setRowCount(0);
@@ -306,7 +320,7 @@ public class SearchEngineGUI extends javax.swing.JFrame {
             model.addRow(new Object[]{term});
         }
         
-        model.addRow(new Object[]{termCount + " terms in the index."});
+        docsFoundLabel.setText("Documents found: " + termCount);
     }//GEN-LAST:event_biwordVocabActionPerformed
 
     /**
@@ -385,6 +399,7 @@ public class SearchEngineGUI extends javax.swing.JFrame {
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem biwordVocab;
     private javax.swing.JTable docTable;
+    private javax.swing.JLabel docsFoundLabel;
     private javax.swing.JMenuItem exitMenu;
     private javax.swing.JFileChooser fileChooser;
     private javax.swing.JMenu fileMenu;
