@@ -27,18 +27,6 @@ import java.util.List;
  * @author Timothy
  */
 public class DirectoryIndex {
-
-    private List<String> fileNames = new ArrayList<>();
-    private BiwordIndex bindex = new BiwordIndex();
-
-    public List<String> getFileNames() {
-        return fileNames;
-    }
-
-    public BiwordIndex getBiwordIndex() {
-        return bindex;
-    }
-
     /**
      * Builds the normal NaiveInvertedIndex for the folder.
      */
@@ -56,7 +44,7 @@ public class DirectoryIndex {
         // an array of positions in the vocabulary file
         long[] vocabPositions = new long[dictionary.length];
 
-        buildVocabFile(folder, dictionary, vocabPositions);
+        buildVocabFile(folder, dictionary, vocabPositions, "vocab.bin");
         buildPostingsFile(folder, index, dictionary, vocabPositions);
     }
 
@@ -145,8 +133,8 @@ public class DirectoryIndex {
         }
     } 
 
-    private static void buildVocabFile(String folder, String[] dictionary,
-            long[] vocabPositions) {
+    public static void buildVocabFile(String folder, String[] dictionary,
+            long[] vocabPositions, String fileName) {
         OutputStreamWriter vocabList = null;
 
         try {
@@ -155,7 +143,7 @@ public class DirectoryIndex {
             // each term with its byte location in this file.
             int vocabI = 0;
             vocabList = new OutputStreamWriter(
-                    new FileOutputStream(new File(folder, "vocab.bin")), "ASCII"
+                    new FileOutputStream(new File(folder, fileName)), "ASCII"
             );
 
             int vocabPos = 0;
@@ -248,25 +236,11 @@ public class DirectoryIndex {
             String term = tokeStream.nextToken();
             // counter to keep track of position
             int counter = 0;
-            // string to keep track of the previous word for biword
-            String prevWord = "";
 
             // loop until the term returned is null
             while (term != null) {
                 // skip the term if the word is empty
                 if (term.compareTo("") != 0) {
-                    // save the first word in the file as the previous word
-                    if (counter == 0) {
-                        prevWord = term;
-                    } // stem the previous token and the current token then add to
-                    // the biword index and set the previous word to the current
-                    // word
-                    else {
-                        /*bindex.addTerm(PorterStemmer.processToken(prevWord)
-                                + " " + PorterStemmer
-                                .processToken(term), docID);
-                        prevWord = term;*/
-                    }
                     // if the term contains a hyphen then remove the hyphen and
                     // stem then index the token, then split the string by
                     // the hyphen, stem and add each word individually
@@ -294,11 +268,4 @@ public class DirectoryIndex {
             e.printStackTrace();
         }
     }
-}
-
-class NPSDocument {
-
-    String title;
-    String body;
-    String url;
 }

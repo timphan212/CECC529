@@ -221,7 +221,9 @@ public class SearchEngineGUI extends javax.swing.JFrame {
                 String currentDir = fileChooser.getSelectedFile()
                         .toString();
                 DirectoryIndex.buildIndexForDirectory(currentDir);
+                DirectoryBiwordIndex.buildIndexForDirectory(currentDir);
                 dindex = new DiskInvertedIndex(currentDir);
+                //creat biword disk index here
                 JOptionPane.showMessageDialog(this, "Successfully indexed "
                         + dindex.getDocumentCount() + " files.", "Indexed",
                         JOptionPane.INFORMATION_MESSAGE);
@@ -248,7 +250,7 @@ public class SearchEngineGUI extends javax.swing.JFrame {
      * @param evt 
      */
     private void vocabMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_vocabMenuActionPerformed
-        ArrayList<String> terms = dindex.getTerms();
+        ArrayList<String> terms = dindex.getPositionalIndexTerms();
         String columnNames[] = new String[] {"Terms"};
         DefaultTableModel model = (DefaultTableModel) docTable.getModel();
         model.setRowCount(0);
@@ -306,8 +308,7 @@ public class SearchEngineGUI extends javax.swing.JFrame {
      * @param evt 
      */
     private void biwordVocabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_biwordVocabActionPerformed
-        /*String[] terms = dindex.getBiwordIndex().getTerms();
-        int termCount = dindex.getBiwordIndex().getTermCount();
+        ArrayList<String> terms = dindex.getBiwordIndexTerms();
         String columnNames[] = new String[] {"Terms"};
         DefaultTableModel model = (DefaultTableModel) docTable.getModel();
         model.setRowCount(0);
@@ -317,7 +318,8 @@ public class SearchEngineGUI extends javax.swing.JFrame {
             model.addRow(new Object[]{term});
         }
         
-        docsFoundLabel.setText("Documents found: " + termCount);*/
+        
+        docsFoundLabel.setText("Documents found: " + dindex.getBiwordTermCount());
     }//GEN-LAST:event_biwordVocabActionPerformed
 
     private void openExistingMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openExistingMenuActionPerformed
@@ -326,6 +328,7 @@ public class SearchEngineGUI extends javax.swing.JFrame {
                 String currentDir = fileChooser.getSelectedFile()
                         .toString();
                 dindex = new DiskInvertedIndex(currentDir);
+                //creat biword disk index here
                 JOptionPane.showMessageDialog(this, "Successfully indexed "
                         + dindex.getDocumentCount() + " files.", "Indexed",
                         JOptionPane.INFORMATION_MESSAGE);
@@ -401,12 +404,6 @@ public class SearchEngineGUI extends javax.swing.JFrame {
                 new SearchEngineGUI().setVisible(true);
             }
         });
-    }
-
-    class NPSDocument {
-	String title;
-	String body;
-	String url;
     }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables

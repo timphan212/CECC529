@@ -38,14 +38,14 @@ public class ParseQueries {
                 if(tokens[i].startsWith("\"")) {
                     // check if the token after ends with a quotation mark
                     // to use biword index instead
-                    /*if(tokens[i+1].endsWith("\"")) {
+                    if(tokens[i+1].endsWith("\"")) {
                         biwordFlag = true;
                         prevWord = PorterStemmer.processToken(tokens[i]
                                 .substring(1));
                     }
                     // the phrase length is not equal to two, have to add to
                     // a phrase list then use the positional inverted index
-                    else*/ {
+                    else {
                         phraseList.add(dindex.GetPostings(PorterStemmer
                                 .processToken(tokens[i].substring(1)), true));
                         phraseFlag = true;
@@ -53,27 +53,28 @@ public class ParseQueries {
                 }
                 // if the token ends with a quotation mark and the biword flag
                 // is set then combine the two terms and check
-               /*else if(tokens[i].endsWith("\"") && biwordFlag == true) {
+               else if(tokens[i].endsWith("\"") && biwordFlag == true) {
                     biwordFlag = false;
                     // or flag is false then need to AND the phrase query with
                     //the previous token in the query
                     if(orFlag == false) {
                         files1 = MergeQueries
-                                .mergeFileLists(files1, bindex.getFileList
-                                    (prevWord + " " + PorterStemmer
-                                .processToken(tokens[i].substring
+                                .mergeFileLists(files1, dindex
+                                    .getBiwordPostings(prevWord + " "
+                                    + PorterStemmer
+                                    .processToken(tokens[i].substring
                                     (0, tokens[i].length()-1))));
                     }
                     // or flag is true need to set files1 equal to the results
                     // from biword index to add to the orFileLists
                     else {
-                        files1 = bindex.getFileList
+                        files1 = dindex.getBiwordPostings
                                 (prevWord + " " + PorterStemmer
                                 .processToken(tokens[i].substring
                                 (0, tokens[i].length()-1)));
                         orFlag = false;
                     }
-                }*/
+                }
                 // check if the token ends with a quotation mark and the phrase
                 // is larger than 2
                 else if(tokens[i].endsWith("\"") && biwordFlag == false) {

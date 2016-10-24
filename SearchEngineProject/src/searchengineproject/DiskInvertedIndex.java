@@ -21,6 +21,9 @@ public class DiskInvertedIndex {
     private RandomAccessFile mVocabList;
     private RandomAccessFile mPostings;
     private long[] mVocabTable;
+    private RandomAccessFile biwordVocabList;
+    private RandomAccessFile biwordPostings;
+    private long[] biwordVocabTable;
     private ArrayList<String> fileNames = new ArrayList<>();
 
     public DiskInvertedIndex(String path) throws IOException {
@@ -28,7 +31,10 @@ public class DiskInvertedIndex {
             mPath = path;
             mVocabList = new RandomAccessFile(new File(path, "vocab.bin"), "r");
             mPostings = new RandomAccessFile(new File(path, "postings.bin"), "r");
-            mVocabTable = readVocabTable(path);
+            mVocabTable = readVocabTable(path, "vocabTable.bin");
+            biwordVocabList = new RandomAccessFile(new File(path, "biwordVocab.bin"), "r");
+            biwordPostings  = new RandomAccessFile(new File(path, "biwordPostings.bin"), "r");
+            biwordVocabTable = readVocabTable(path, "biwordVocabTable.bin");
             fileNames = readAllFileNames(path);
         } catch (FileNotFoundException ex) {
             System.out.println(ex.toString());
@@ -143,9 +149,50 @@ public class DiskInvertedIndex {
         return null;
     }
 
+    private static ArrayList<Integer> readBiwordPostings(
+            RandomAccessFile postings, long postingsPosition) {
+        try {
+            // seek to the position in the file where the postings start.
+            postings.seek(postingsPosition);
+
+            // read the 4 bytes for the document frequency
+            byte[] buffer = new byte[4];
+            postings.read(buffer, 0, buffer.length);
+
+            // use ByteBuffer to convert the 4 bytes into an int.
+            int documentFrequency = ByteBuffer.wrap(buffer).getInt();
+
+            int lastDocId = 0;
+            ArrayList<Integer> postList = new ArrayList<>();
+
+            for (int i = 0; i < documentFrequency; i++) {
+                // read the document id
+                byte[] docBuffer = new byte[4];
+                postings.read(docBuffer, 0, docBuffer.length);
+                int documentID = ByteBuffer.wrap(docBuffer).getInt() + lastDocId;
+                lastDocId = documentID;
+
+                postList.add(documentID);
+            }
+
+            return postList;
+        } catch (IOException ex) {
+            System.out.println(ex.toString());
+        }
+        return null;
+
+    }
+    
+    /**
+     * Retrieve the positional postings of the term
+     * @param term string to search for in the posting file
+     * @param positions flag to check if positions are needed
+     * @return array list of positional postings for the term
+     */
     public ArrayList<PositionalPosting> GetPostings(String term,
             boolean positions) {
-        long postingsPosition = binarySearchVocabulary(term);
+        long postingsPosition = binarySearchVocabulary(term, mVocabTable,
+                mVocabList);
 
         if (postingsPosition >= 0) {
             if(positions == true) {
@@ -160,30 +207,47 @@ public class DiskInvertedIndex {
         return null;
     }
 
-    private long binarySearchVocabulary(String term) {
+    /**
+     * Retrieve the postings for the term
+     * @param term string to look for in the posting files
+     * @return list of integers representing the document IDs
+     */
+    public ArrayList<Integer> getBiwordPostings(String term) {
+        long postingsPosition = binarySearchVocabulary(term, biwordVocabTable,
+                biwordVocabList);
+        
+        if(postingsPosition >= 0) {
+            return readBiwordPostings(biwordPostings, postingsPosition);
+        }
+        
+        return null;
+    }
+    
+    private long binarySearchVocabulary(String term, long[] vocabTable,
+            RandomAccessFile vocabList) {
         // do a binary search over the vocabulary, using the vocabTable and the file vocabList.
-        int i = 0, j = mVocabTable.length / 2 - 1;
+        int i = 0, j = vocabTable.length / 2 - 1;
         while (i <= j) {
             try {
                 int m = (i + j) / 2;
-                long vListPosition = mVocabTable[m * 2];
+                long vListPosition = vocabTable[m * 2];
                 int termLength;
-                if (m == mVocabTable.length / 2 - 1) {
-                    termLength = (int) (mVocabList.length() - mVocabTable[m * 2]);
+                if (m == vocabTable.length / 2 - 1) {
+                    termLength = (int) (vocabList.length() - vocabTable[m * 2]);
                 } else {
-                    termLength = (int) (mVocabTable[(m + 1) * 2] - vListPosition);
+                    termLength = (int) (vocabTable[(m + 1) * 2] - vListPosition);
                 }
 
-                mVocabList.seek(vListPosition);
+                vocabList.seek(vListPosition);
 
                 byte[] buffer = new byte[termLength];
-                mVocabList.read(buffer, 0, termLength);
+                vocabList.read(buffer, 0, termLength);
                 String fileTerm = new String(buffer, "ASCII");
 
                 int compareValue = term.compareTo(fileTerm);
                 if (compareValue == 0) {
                     // found it!
-                    return mVocabTable[m * 2 + 1];
+                    return vocabTable[m * 2 + 1];
                 } else if (compareValue < 0) {
                     j = m - 1;
                 } else {
@@ -196,12 +260,12 @@ public class DiskInvertedIndex {
         return -1;
     }
 
-    private static long[] readVocabTable(String indexName) {
+    private static long[] readVocabTable(String indexName, String fileName) {
         try {
             long[] vocabTable;
 
             RandomAccessFile tableFile = new RandomAccessFile(
-                    new File(indexName, "vocabTable.bin"),
+                    new File(indexName, fileName),
                     "r");
 
             byte[] byteBuffer = new byte[4];
@@ -229,6 +293,10 @@ public class DiskInvertedIndex {
         return mVocabTable.length / 2;
     }
 
+    public int getBiwordTermCount() {
+        return biwordVocabTable.length / 2;
+    }
+    
     private static ArrayList<String> readAllFileNames(String path) throws IOException {
         ArrayList<String> names = new ArrayList<>();
         final Path currentWorkingPath = Paths.get(path).toAbsolutePath();
@@ -277,26 +345,34 @@ public class DiskInvertedIndex {
         return fileNames.get(docID);
     }
     
-    public ArrayList<String> getTerms() {
+    public ArrayList<String> getPositionalIndexTerms() {
+        return getTerms(mVocabTable, mVocabList);
+    }
+    
+    public ArrayList<String> getBiwordIndexTerms() {
+        return getTerms(biwordVocabTable, biwordVocabList);
+    }
+    
+    private ArrayList<String> getTerms(long[] vocabTable, RandomAccessFile vocabFile) {
         int termLength = 0;
         ArrayList<String> terms = new ArrayList<>();
         long vocabPos = 0;
         byte[] buffer;
         
-        for(int i = 0; i < mVocabTable.length; i+=2) {
+        for(int i = 0; i < vocabTable.length; i+=2) {
             try {
-                vocabPos = mVocabTable[i];
-                mVocabList.seek(vocabPos);
+                vocabPos = vocabTable[i];
+                vocabFile.seek(vocabPos);
                 
-                if(i == mVocabTable.length - 2) {
-                    termLength = (int) (mVocabList.length() - mVocabTable[i]);
+                if(i == vocabTable.length - 2) {
+                    termLength = (int) (vocabFile.length() - vocabTable[i]);
                 }
                 else {
-                    termLength = (int) (mVocabTable[i+2] - vocabPos);
+                    termLength = (int) (vocabTable[i+2] - vocabPos);
                 }
                 
                 buffer = new byte[termLength];
-                mVocabList.read(buffer, 0, termLength);
+                vocabFile.read(buffer, 0, termLength);
                 terms.add(new String(buffer, "ASCII"));
             } catch (IOException ex) {
                 Logger.getLogger(DiskInvertedIndex.class.getName())
