@@ -20,7 +20,10 @@ import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map.Entry;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  *
@@ -32,7 +35,7 @@ public class DirectoryIndex {
      */
     public static void buildIndexForDirectory(String folder) {
         PositionalInvertedIndex index = new PositionalInvertedIndex();
-
+        
         // Index the directory using a naive index
         indexFiles(folder, index);
 
@@ -191,7 +194,7 @@ public class DirectoryIndex {
                         // we have found a .txt file; add its name to the
                         // fileName list, then index the file and increase the
                         // document ID counter.
-                        indexFile(file.toFile(), mDocumentID, index);
+                        indexFile(file.toFile(), mDocumentID, index, folder);
                         mDocumentID++;
                     }
                     return FileVisitResult.CONTINUE;
@@ -220,11 +223,12 @@ public class DirectoryIndex {
      * each term from the document.
      */
     private static void indexFile(File file, int docID,
-            PositionalInvertedIndex index) {
+            PositionalInvertedIndex index, String folder) {
         // Construct a SimpleTokenStream for the given File.
         // Read each token from the stream and add it to the index.
 
         try {
+            HashMap<String, Integer> termFreqMap = new HashMap<>();
             // use GSON to grab the body tag from the document
             Gson gson = new Gson();
             // open the file with gson
@@ -247,25 +251,99 @@ public class DirectoryIndex {
                     if (term.contains("-")) {
                         index.addTerm(PorterStemmer.processToken(term
                                 .replace("-", "")), docID, counter);
+                        updateTermFreqMap(PorterStemmer.processToken(term
+                                .replace("-", "")), termFreqMap);
                         String[] hyphenWord = term.split("-");
 
                         for (String word : hyphenWord) {
                             index.addTerm(PorterStemmer.processToken(word),
                                     docID, counter);
+                            updateTermFreqMap(PorterStemmer.processToken(word),
+                                    termFreqMap);
                         }
                     } // stem and add the token to the positional inverted index
                     else {
                         index.addTerm(PorterStemmer.processToken(term),
                                 docID, counter);
+                        updateTermFreqMap(PorterStemmer.processToken(term),
+                                    termFreqMap);
                     }
                 }
                 // get the next token and increment the position counter
                 term = tokeStream.nextToken();
                 counter++;
             }
-
+            
+            //write document weight to the folder
+            buildWeightsFile(folder, termFreqMap);
         } catch (FileNotFoundException e) {
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Creates the document weights file
+     * @param folder name of the directory th files are located
+     * @param index the term frequency index
+     */
+    private static void buildWeightsFile(String folder, 
+            HashMap<String, Integer> index) {
+        try {
+            double wdt = 0.0;
+            
+            // create a file called docWeights.bin
+            File weightsFile = new File(folder, "docWeights.bin");
+            // creates an output stream
+            FileOutputStream weightsFileOutput = null;
+            
+            // if the file already exists then append the doc weight to the end
+            // of the file
+            if(weightsFile.exists()) {
+                weightsFileOutput = new FileOutputStream(weightsFile, true);
+            }
+            // otherwise create a new file
+            else {
+                weightsFile.createNewFile();
+                weightsFileOutput = new FileOutputStream(weightsFile);
+            }          
+            
+            // loop through each term in the hashmap and calculate wdt then
+            // raise it to the power of 2
+            for(Entry<String, Integer> term : index.entrySet()) {
+                wdt += Math.pow((1 + Math.log(term.getValue())), 2);   
+            }
+            
+            // calculate ld by square rooting the sum of wdt^2
+            double ld = Math.sqrt(wdt);
+            // create a buffer to fit ld
+            byte[] docWeightBytes = ByteBuffer.allocate(8)
+                .putDouble(ld).array();
+            // write the buffer to the file
+            weightsFileOutput
+                .write(docWeightBytes, 0, docWeightBytes.length);
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(DirectoryIndex.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(DirectoryIndex.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    /**
+     * Updates the hashmap with the new term frequency
+     * @param term a string variable representing the term
+     * @param termFreqMap a hashmap which maps the term to the term frequency
+     */
+    private static void updateTermFreqMap(String term, 
+            HashMap<String, Integer> termFreqMap) {
+        // the hashmap contains the term already, therefore get the frequency
+        // and increment it by one
+        if(termFreqMap.containsKey(term)) {
+            termFreqMap.replace(term, termFreqMap.get(term) + 1);
+        }
+        // the hashmap does not contain the term, insert the term and set the
+        // frequency to 1
+        else {
+            termFreqMap.put(term, 1);
         }
     }
 }

@@ -25,6 +25,7 @@ public class DiskInvertedIndex {
     private RandomAccessFile biwordPostings;
     private long[] biwordVocabTable;
     private ArrayList<String> fileNames = new ArrayList<>();
+    private RandomAccessFile docWeights;
 
     public DiskInvertedIndex(String path) throws IOException {
         try {
@@ -36,6 +37,7 @@ public class DiskInvertedIndex {
             biwordPostings  = new RandomAccessFile(new File(path, "biwordPostings.bin"), "r");
             biwordVocabTable = readVocabTable(path, "biwordVocabTable.bin");
             fileNames = readAllFileNames(path);
+            docWeights = new RandomAccessFile(new File(path, "docWeights.bin"), "r");
         } catch (FileNotFoundException ex) {
             System.out.println(ex.toString());
         }
@@ -48,7 +50,8 @@ public class DiskInvertedIndex {
      * @return array list of positional posting
      */
     private static ArrayList<PositionalPosting> readPositionalPostings (
-            RandomAccessFile postings, long postingsPosition) {
+            RandomAccessFile postings, long postingsPosition, 
+            RandomAccessFile docWeightsFile) {
         try {
             // seek to the position in the file where the postings start.
             postings.seek(postingsPosition);
@@ -91,6 +94,7 @@ public class DiskInvertedIndex {
                 PositionalPosting posPost = new PositionalPosting(documentID,
                         termFrequency, positions);
                 posPostList.add(posPost);
+                findDocWeight(documentID, docWeightsFile);
             }
 
             return posPostList;
@@ -107,7 +111,8 @@ public class DiskInvertedIndex {
      * @return array list of positional postings
      */
     private static ArrayList<PositionalPosting> readPostings (
-            RandomAccessFile postings, long postingsPosition) {
+            RandomAccessFile postings, long postingsPosition,
+            RandomAccessFile docWeightsFile) {
         try {
             // seek to the position in the file where the postings start.
             postings.seek(postingsPosition);
@@ -140,6 +145,7 @@ public class DiskInvertedIndex {
                 PositionalPosting posPost = new PositionalPosting(documentID,
                         termFrequency);
                 posPostList.add(posPost);
+                findDocWeight(documentID, docWeightsFile);
             }
 
             return posPostList;
@@ -196,10 +202,11 @@ public class DiskInvertedIndex {
 
         if (postingsPosition >= 0) {
             if(positions == true) {
-                return readPositionalPostings(mPostings, postingsPosition);
+                return readPositionalPostings(mPostings, postingsPosition,
+                        docWeights);
             }
             else {
-                return readPostings(mPostings, postingsPosition);
+                return readPostings(mPostings, postingsPosition, docWeights);
             }
             
         }
@@ -381,5 +388,18 @@ public class DiskInvertedIndex {
         }
         
         return terms;
+    }
+    
+    private static void findDocWeight(int documentID, 
+            RandomAccessFile docWeightsFile) {
+        try {
+            docWeightsFile.seek(documentID*8);
+            byte[] buffer = new byte[8];
+            docWeightsFile.read(buffer, 0, buffer.length);
+            double ld = ByteBuffer.wrap(buffer).getDouble();
+            System.out.println(ld);
+        } catch (IOException ex) {
+            Logger.getLogger(DiskInvertedIndex.class.getName()).log(Level.SEVERE, null, ex);
+        }
     }
 }

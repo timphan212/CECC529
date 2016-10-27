@@ -50,6 +50,7 @@ public class SearchEngineGUI extends javax.swing.JFrame {
     private void initComponents() {
 
         fileChooser = new javax.swing.JFileChooser();
+        queryModeButtonGroup = new javax.swing.ButtonGroup();
         mainLayout = new javax.swing.JPanel();
         searchBar = new javax.swing.JTextField();
         searchButton = new javax.swing.JButton();
@@ -65,6 +66,13 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         viewMenu = new javax.swing.JMenu();
         vocabMenu = new javax.swing.JMenuItem();
         biwordVocab = new javax.swing.JMenuItem();
+        jMenu1 = new javax.swing.JMenu();
+        jCheckBoxMenuItem1 = new javax.swing.JCheckBoxMenuItem();
+        jMenu2 = new javax.swing.JMenu();
+        jCheckBoxMenuItem2 = new javax.swing.JCheckBoxMenuItem();
+        jCheckBoxMenuItem3 = new javax.swing.JCheckBoxMenuItem();
+        jCheckBoxMenuItem4 = new javax.swing.JCheckBoxMenuItem();
+        jCheckBoxMenuItem5 = new javax.swing.JCheckBoxMenuItem();
 
         fileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
@@ -201,6 +209,35 @@ public class SearchEngineGUI extends javax.swing.JFrame {
             viewMenu.add(biwordVocab);
 
             jMenuBar1.add(viewMenu);
+
+            jMenu1.setText("Options");
+
+            queryModeButtonGroup.add(jCheckBoxMenuItem1);
+            jCheckBoxMenuItem1.setSelected(true);
+            jCheckBoxMenuItem1.setText("Boolean Query");
+            jMenu1.add(jCheckBoxMenuItem1);
+
+            jMenu2.setText("Ranked Retrieval");
+
+            queryModeButtonGroup.add(jCheckBoxMenuItem2);
+            jCheckBoxMenuItem2.setText("Default");
+            jMenu2.add(jCheckBoxMenuItem2);
+
+            queryModeButtonGroup.add(jCheckBoxMenuItem3);
+            jCheckBoxMenuItem3.setText("tf-idf");
+            jMenu2.add(jCheckBoxMenuItem3);
+
+            queryModeButtonGroup.add(jCheckBoxMenuItem4);
+            jCheckBoxMenuItem4.setText("Okapi");
+            jMenu2.add(jCheckBoxMenuItem4);
+
+            queryModeButtonGroup.add(jCheckBoxMenuItem5);
+            jCheckBoxMenuItem5.setText("Wacky");
+            jMenu2.add(jCheckBoxMenuItem5);
+
+            jMenu1.add(jMenu2);
+
+            jMenuBar1.add(jMenu1);
 
             setJMenuBar(jMenuBar1);
 
@@ -413,10 +450,18 @@ public class SearchEngineGUI extends javax.swing.JFrame {
     private javax.swing.JMenuItem exitMenu;
     private javax.swing.JFileChooser fileChooser;
     private javax.swing.JMenu fileMenu;
+    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem1;
+    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem2;
+    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem3;
+    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem4;
+    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem5;
+    private javax.swing.JMenu jMenu1;
+    private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JPanel mainLayout;
     private javax.swing.JMenuItem openExistingMenu;
     private javax.swing.JMenuItem openMenu;
+    private javax.swing.ButtonGroup queryModeButtonGroup;
     private javax.swing.JTextField searchBar;
     private javax.swing.JButton searchButton;
     private javax.swing.JButton stemButton;
