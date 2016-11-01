@@ -12,6 +12,6 @@ import java.util.ArrayList;
  * @author Timothy
  */
 public interface Strategy {
-    public ArrayList<String> rankingAlgorithm(String query,
+    public ArrayList<AccumulatorPosting> rankingAlgorithm(String query,
             DiskInvertedIndex dindex);
 }

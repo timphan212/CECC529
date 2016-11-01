@@ -5,20 +5,17 @@
  */
 package searchengineproject;
 
-import java.util.ArrayList;
+import java.util.Comparator;
 
 /**
  *
  * @author Timothy
  */
-public class OkapiRankedRetrieval implements Strategy {
+public class AccumulatorPQSort implements Comparator<AccumulatorPosting> {
 
     @Override
-    public ArrayList<AccumulatorPosting> rankingAlgorithm(String query, 
-            DiskInvertedIndex dindex) {
-        System.out.println("okapi");
-        
-        return null;
+    public int compare(AccumulatorPosting o1, AccumulatorPosting o2) {
+        return Double.compare(o2.getAccumulator(), o1.getAccumulator());
     }
     
 }

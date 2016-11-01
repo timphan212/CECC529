@@ -50,8 +50,7 @@ public class DiskInvertedIndex {
      * @return array list of positional posting
      */
     private static ArrayList<PositionalPosting> readPositionalPostings (
-            RandomAccessFile postings, long postingsPosition, 
-            RandomAccessFile docWeightsFile) {
+            RandomAccessFile postings, long postingsPosition) {
         try {
             // seek to the position in the file where the postings start.
             postings.seek(postingsPosition);
@@ -75,7 +74,7 @@ public class DiskInvertedIndex {
                 postings.read(docBuffer, 0, docBuffer.length);
                 int documentID = ByteBuffer.wrap(docBuffer).getInt() + lastDocId;
                 lastDocId = documentID;
-                
+
                 // read the term frequency
                 byte[] tfBuffer = new byte[4];
                 postings.read(tfBuffer, 0, tfBuffer.length);
@@ -94,7 +93,6 @@ public class DiskInvertedIndex {
                 PositionalPosting posPost = new PositionalPosting(documentID,
                         termFrequency, positions);
                 posPostList.add(posPost);
-                findDocWeight(documentID, docWeightsFile);
             }
 
             return posPostList;
@@ -111,8 +109,7 @@ public class DiskInvertedIndex {
      * @return array list of positional postings
      */
     private static ArrayList<PositionalPosting> readPostings (
-            RandomAccessFile postings, long postingsPosition,
-            RandomAccessFile docWeightsFile) {
+            RandomAccessFile postings, long postingsPosition) {
         try {
             // seek to the position in the file where the postings start.
             postings.seek(postingsPosition);
@@ -145,7 +142,6 @@ public class DiskInvertedIndex {
                 PositionalPosting posPost = new PositionalPosting(documentID,
                         termFrequency);
                 posPostList.add(posPost);
-                findDocWeight(documentID, docWeightsFile);
             }
 
             return posPostList;
@@ -202,11 +198,10 @@ public class DiskInvertedIndex {
 
         if (postingsPosition >= 0) {
             if(positions == true) {
-                return readPositionalPostings(mPostings, postingsPosition,
-                        docWeights);
+                return readPositionalPostings(mPostings, postingsPosition);
             }
             else {
-                return readPostings(mPostings, postingsPosition, docWeights);
+                return readPostings(mPostings, postingsPosition);
             }
             
         }
@@ -390,15 +385,23 @@ public class DiskInvertedIndex {
         return terms;
     }
     
-    private static void findDocWeight(int documentID, 
+    private double findDocWeight(int documentID, 
             RandomAccessFile docWeightsFile) {
         try {
             docWeightsFile.seek(documentID*8);
             byte[] buffer = new byte[8];
             docWeightsFile.read(buffer, 0, buffer.length);
-            double ld = ByteBuffer.wrap(buffer).getDouble();
+            
+            return ByteBuffer.wrap(buffer).getDouble();
         } catch (IOException ex) {
-            Logger.getLogger(DiskInvertedIndex.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(DiskInvertedIndex.class.getName())
+                    .log(Level.SEVERE, null, ex);
         }
+        
+        return 0.0;
+    }
+    
+    public double getDocWeight(int documentID) {
+        return findDocWeight(documentID, docWeights);
     }
 }

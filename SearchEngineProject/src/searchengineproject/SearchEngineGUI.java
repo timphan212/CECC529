@@ -114,14 +114,14 @@ public class SearchEngineGUI extends javax.swing.JFrame {
 
             },
             new String [] {
-                "Documents"
+                "Documents", "Accumulator"
             }
         ) {
             Class[] types = new Class [] {
-                java.lang.String.class
+                java.lang.String.class, java.lang.Double.class
             };
             boolean[] canEdit = new boolean [] {
-                false
+                false, false
             };
 
             public Class getColumnClass(int columnIndex) {
@@ -151,6 +151,7 @@ public class SearchEngineGUI extends javax.swing.JFrame {
             tableScrollPane.setViewportView(docTable);
             if (docTable.getColumnModel().getColumnCount() > 0) {
                 docTable.getColumnModel().getColumn(0).setResizable(false);
+                docTable.getColumnModel().getColumn(1).setResizable(false);
             }
 
             mainLayout.add(tableScrollPane);
@@ -260,7 +261,6 @@ public class SearchEngineGUI extends javax.swing.JFrame {
                 DirectoryIndex.buildIndexForDirectory(currentDir);
                 DirectoryBiwordIndex.buildIndexForDirectory(currentDir);
                 dindex = new DiskInvertedIndex(currentDir);
-                //creat biword disk index here
                 JOptionPane.showMessageDialog(this, "Successfully indexed "
                         + dindex.getDocumentCount() + " files.", "Indexed",
                         JOptionPane.INFORMATION_MESSAGE);
@@ -320,16 +320,16 @@ public class SearchEngineGUI extends javax.swing.JFrame {
                 new WackyRankedRetrieval()};
             
             if(queryModeButtonGroup.isSelected(defaultOption.getModel())) {
-                rankedRetrievalSelection(algorithms[0], query, dindex);
+                rankedRetrievalSelection(algorithms[0], query);
             }
             else if(queryModeButtonGroup.isSelected(tfidfOption.getModel())) {
-                rankedRetrievalSelection(algorithms[1], query, dindex);
+                rankedRetrievalSelection(algorithms[1], query);
             }
             else if(queryModeButtonGroup.isSelected(okapiOption.getModel())) {
-                rankedRetrievalSelection(algorithms[2], query, dindex);
+                rankedRetrievalSelection(algorithms[2], query);
             }
             else {
-                rankedRetrievalSelection(algorithms[3], query, dindex);
+                rankedRetrievalSelection(algorithms[3], query);
             }
         }
     }//GEN-LAST:event_searchButtonActionPerformed
@@ -348,10 +348,8 @@ public class SearchEngineGUI extends javax.swing.JFrame {
      * @param strat
      * @param query 
      */
-    private void rankedRetrievalSelection(Strategy strat, String query,
-            DiskInvertedIndex dindex) {
-        resultsTableBuilder(strat.rankingAlgorithm(query, dindex),
-                "Documents", 0);
+    private void rankedRetrievalSelection(Strategy strat, String query) {
+        rankedResultsTableBuilder(strat.rankingAlgorithm(query, dindex));
         
     }
     
@@ -367,6 +365,7 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         String columnNames[] = new String[] {name};
         DefaultTableModel model = (DefaultTableModel) docTable.getModel();
         model.setRowCount(0);
+        model.setColumnCount(1);
         model.setColumnIdentifiers(columnNames);
         
         for(String file : results) {
@@ -382,6 +381,27 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         }
         
         docsFoundLabel.setText(count + results.size());    
+    }
+    
+    /**
+     * Builds the table for ranked query retrieval
+     * @param results list of accumulator postings which contain docid and
+     * accumulator value
+     */
+    private void rankedResultsTableBuilder(
+            ArrayList<AccumulatorPosting> results) {
+        String[] columnNames = new String[] {"Document", "Accumulator"};
+        DefaultTableModel model = (DefaultTableModel) docTable.getModel();
+        model.setRowCount(0);
+        model.setColumnCount(2);
+        model.setColumnIdentifiers(columnNames);
+        
+        for(AccumulatorPosting ap : results) {
+            String fileName = dindex.getFileNames(ap.getDocID());
+            model.addRow(new Object[]{fileName, ap.getAccumulator()});
+        }
+        
+        docsFoundLabel.setText("Documents found: " + results.size());
     }
     /**
      * Displays the vocabulary for the biword index when selected from the
