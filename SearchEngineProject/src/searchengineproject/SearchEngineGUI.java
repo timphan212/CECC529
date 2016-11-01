@@ -66,13 +66,13 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         viewMenu = new javax.swing.JMenu();
         vocabMenu = new javax.swing.JMenuItem();
         biwordVocab = new javax.swing.JMenuItem();
-        jMenu1 = new javax.swing.JMenu();
-        jCheckBoxMenuItem1 = new javax.swing.JCheckBoxMenuItem();
-        jMenu2 = new javax.swing.JMenu();
-        jCheckBoxMenuItem2 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem3 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem4 = new javax.swing.JCheckBoxMenuItem();
-        jCheckBoxMenuItem5 = new javax.swing.JCheckBoxMenuItem();
+        optionsMenu = new javax.swing.JMenu();
+        booleanOption = new javax.swing.JCheckBoxMenuItem();
+        rankedRetMenu = new javax.swing.JMenu();
+        defaultOption = new javax.swing.JCheckBoxMenuItem();
+        tfidfOption = new javax.swing.JCheckBoxMenuItem();
+        okapiOption = new javax.swing.JCheckBoxMenuItem();
+        wackyOption = new javax.swing.JCheckBoxMenuItem();
 
         fileChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
@@ -210,34 +210,34 @@ public class SearchEngineGUI extends javax.swing.JFrame {
 
             jMenuBar1.add(viewMenu);
 
-            jMenu1.setText("Options");
+            optionsMenu.setText("Options");
 
-            queryModeButtonGroup.add(jCheckBoxMenuItem1);
-            jCheckBoxMenuItem1.setSelected(true);
-            jCheckBoxMenuItem1.setText("Boolean Query");
-            jMenu1.add(jCheckBoxMenuItem1);
+            queryModeButtonGroup.add(booleanOption);
+            booleanOption.setSelected(true);
+            booleanOption.setText("Boolean Query");
+            optionsMenu.add(booleanOption);
 
-            jMenu2.setText("Ranked Retrieval");
+            rankedRetMenu.setText("Ranked Retrieval");
 
-            queryModeButtonGroup.add(jCheckBoxMenuItem2);
-            jCheckBoxMenuItem2.setText("Default");
-            jMenu2.add(jCheckBoxMenuItem2);
+            queryModeButtonGroup.add(defaultOption);
+            defaultOption.setText("Default");
+            rankedRetMenu.add(defaultOption);
 
-            queryModeButtonGroup.add(jCheckBoxMenuItem3);
-            jCheckBoxMenuItem3.setText("tf-idf");
-            jMenu2.add(jCheckBoxMenuItem3);
+            queryModeButtonGroup.add(tfidfOption);
+            tfidfOption.setText("tf-idf");
+            rankedRetMenu.add(tfidfOption);
 
-            queryModeButtonGroup.add(jCheckBoxMenuItem4);
-            jCheckBoxMenuItem4.setText("Okapi");
-            jMenu2.add(jCheckBoxMenuItem4);
+            queryModeButtonGroup.add(okapiOption);
+            okapiOption.setText("Okapi");
+            rankedRetMenu.add(okapiOption);
 
-            queryModeButtonGroup.add(jCheckBoxMenuItem5);
-            jCheckBoxMenuItem5.setText("Wacky");
-            jMenu2.add(jCheckBoxMenuItem5);
+            queryModeButtonGroup.add(wackyOption);
+            wackyOption.setText("Wacky");
+            rankedRetMenu.add(wackyOption);
 
-            jMenu1.add(jMenu2);
+            optionsMenu.add(rankedRetMenu);
 
-            jMenuBar1.add(jMenu1);
+            jMenuBar1.add(optionsMenu);
 
             setJMenuBar(jMenuBar1);
 
@@ -287,18 +287,7 @@ public class SearchEngineGUI extends javax.swing.JFrame {
      * @param evt 
      */
     private void vocabMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_vocabMenuActionPerformed
-        ArrayList<String> terms = dindex.getPositionalIndexTerms();
-        String columnNames[] = new String[] {"Terms"};
-        DefaultTableModel model = (DefaultTableModel) docTable.getModel();
-        model.setRowCount(0);
-        model.setColumnIdentifiers(columnNames);
-        
-        for(String term : terms) {
-            model.addRow(new Object[]{term});
-        }
-        
-        
-        docsFoundLabel.setText("Documents found: " + dindex.getTermCount());
+        resultsTableBuilder(dindex.getPositionalIndexTerms(), "Terms", 1);
     }//GEN-LAST:event_vocabMenuActionPerformed
     
     /**
@@ -308,13 +297,9 @@ public class SearchEngineGUI extends javax.swing.JFrame {
      */
     private void stemButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_stemButtonActionPerformed
         String token = searchBar.getText();
-        String columnNames[] = new String[] {"Stemmed Term"};
-        DefaultTableModel model = (DefaultTableModel) docTable.getModel();
-        model.setRowCount(0);
-        model.setColumnIdentifiers(columnNames);
-        
-        model.addRow(new Object[]{PorterStemmer.processToken(token)});
-        docsFoundLabel.setText("Documents found: " + 0);
+        ArrayList<String> stemmedToken = new ArrayList<>();
+        stemmedToken.add(PorterStemmer.processToken(token));
+        resultsTableBuilder(stemmedToken, "Stemmed Term", 0);
     }//GEN-LAST:event_stemButtonActionPerformed
 
     /**
@@ -325,40 +310,90 @@ public class SearchEngineGUI extends javax.swing.JFrame {
     private void searchButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_searchButtonActionPerformed
         String query = searchBar.getText();
         query = query.replaceAll("[-]+|[\']", "");
-        String columnNames[] = new String[] {"Documents"};
+        
+        if(queryModeButtonGroup.isSelected(booleanOption.getModel())) {
+            booleanRetrieval(query);
+        }
+        else {
+            Strategy[] algorithms = {new DefaultRankedRetrieval(),
+                new tfidfRankedRetrieval(), new OkapiRankedRetrieval(),
+                new WackyRankedRetrieval()};
+            
+            if(queryModeButtonGroup.isSelected(defaultOption.getModel())) {
+                rankedRetrievalSelection(algorithms[0], query);
+            }
+            else if(queryModeButtonGroup.isSelected(tfidfOption.getModel())) {
+                rankedRetrievalSelection(algorithms[1], query);
+            }
+            else if(queryModeButtonGroup.isSelected(okapiOption.getModel())) {
+                rankedRetrievalSelection(algorithms[2], query);
+            }
+            else {
+                rankedRetrievalSelection(algorithms[3], query);
+            }
+        }
+    }//GEN-LAST:event_searchButtonActionPerformed
+    
+    /**
+     * Option for boolean query retrieval
+     * @param query 
+     */
+    private void booleanRetrieval(String query) {
+        resultsTableBuilder(ParseQueries.searchResults(query, dindex)
+                , "Documents", 0);
+    }
+    
+    /**
+     * Option for ranked query retrieval
+     * @param strat
+     * @param query 
+     */
+    private void rankedRetrievalSelection(Strategy strat, String query) {
+        resultsTableBuilder(strat.rankingAlgorithm(query), "Documents", 0);
+        
+    }
+    
+    /**
+     * Method to build a table to display in the GUI
+     * @param results the list of strings to display in the table
+     * @param name the name of the column
+     * @param type the type of operation, which alters the label at the bottom
+     */
+    private void resultsTableBuilder(ArrayList<String> results, 
+            String name, int type) {
+        String count = "";
+        String columnNames[] = new String[] {name};
         DefaultTableModel model = (DefaultTableModel) docTable.getModel();
         model.setRowCount(0);
         model.setColumnIdentifiers(columnNames);
-
-        ArrayList<String> results = ParseQueries.searchResults(query, dindex);
         
         for(String file : results) {
             model.addRow(new Object[]{file});
         }
         
-        docsFoundLabel.setText("Documents found: " + results.size());
-    }//GEN-LAST:event_searchButtonActionPerformed
-
+        if(type == 0) {
+            count = "Documents found: ";
+            
+        }
+        else {
+            count = "Vocabulary found: ";
+        }
+        
+        docsFoundLabel.setText(count + results.size());    
+    }
     /**
      * Displays the vocabulary for the biword index when selected from the
      * drop-down menu in the table
      * @param evt 
      */
     private void biwordVocabActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_biwordVocabActionPerformed
-        ArrayList<String> terms = dindex.getBiwordIndexTerms();
-        String columnNames[] = new String[] {"Terms"};
-        DefaultTableModel model = (DefaultTableModel) docTable.getModel();
-        model.setRowCount(0);
-        model.setColumnIdentifiers(columnNames);
-        
-        for(String term : terms) {
-            model.addRow(new Object[]{term});
-        }
-        
-        
-        docsFoundLabel.setText("Documents found: " + dindex.getBiwordTermCount());
+        resultsTableBuilder(dindex.getBiwordIndexTerms(), "Terms", 1);
     }//GEN-LAST:event_biwordVocabActionPerformed
 
+    /**
+     * Used to select a directory which already have the bin files
+     * @param evt 
+     */
     private void openExistingMenuActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openExistingMenuActionPerformed
         if(fileChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
             try {
@@ -445,28 +480,28 @@ public class SearchEngineGUI extends javax.swing.JFrame {
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JMenuItem biwordVocab;
+    private javax.swing.JCheckBoxMenuItem booleanOption;
+    private javax.swing.JCheckBoxMenuItem defaultOption;
     private javax.swing.JTable docTable;
     private javax.swing.JLabel docsFoundLabel;
     private javax.swing.JMenuItem exitMenu;
     private javax.swing.JFileChooser fileChooser;
     private javax.swing.JMenu fileMenu;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem1;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem2;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem3;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem4;
-    private javax.swing.JCheckBoxMenuItem jCheckBoxMenuItem5;
-    private javax.swing.JMenu jMenu1;
-    private javax.swing.JMenu jMenu2;
     private javax.swing.JMenuBar jMenuBar1;
     private javax.swing.JPanel mainLayout;
+    private javax.swing.JCheckBoxMenuItem okapiOption;
     private javax.swing.JMenuItem openExistingMenu;
     private javax.swing.JMenuItem openMenu;
+    private javax.swing.JMenu optionsMenu;
     private javax.swing.ButtonGroup queryModeButtonGroup;
+    private javax.swing.JMenu rankedRetMenu;
     private javax.swing.JTextField searchBar;
     private javax.swing.JButton searchButton;
     private javax.swing.JButton stemButton;
     private javax.swing.JScrollPane tableScrollPane;
+    private javax.swing.JCheckBoxMenuItem tfidfOption;
     private javax.swing.JMenu viewMenu;
     private javax.swing.JMenuItem vocabMenu;
+    private javax.swing.JCheckBoxMenuItem wackyOption;
     // End of variables declaration//GEN-END:variables
 }
