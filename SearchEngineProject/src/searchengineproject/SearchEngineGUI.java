@@ -320,16 +320,16 @@ public class SearchEngineGUI extends javax.swing.JFrame {
                 new WackyRankedRetrieval()};
             
             if(queryModeButtonGroup.isSelected(defaultOption.getModel())) {
-                rankedRetrievalSelection(algorithms[0], query);
+                rankedRetrievalSelection(algorithms[0], query, dindex);
             }
             else if(queryModeButtonGroup.isSelected(tfidfOption.getModel())) {
-                rankedRetrievalSelection(algorithms[1], query);
+                rankedRetrievalSelection(algorithms[1], query, dindex);
             }
             else if(queryModeButtonGroup.isSelected(okapiOption.getModel())) {
-                rankedRetrievalSelection(algorithms[2], query);
+                rankedRetrievalSelection(algorithms[2], query, dindex);
             }
             else {
-                rankedRetrievalSelection(algorithms[3], query);
+                rankedRetrievalSelection(algorithms[3], query, dindex);
             }
         }
     }//GEN-LAST:event_searchButtonActionPerformed
@@ -348,8 +348,10 @@ public class SearchEngineGUI extends javax.swing.JFrame {
      * @param strat
      * @param query 
      */
-    private void rankedRetrievalSelection(Strategy strat, String query) {
-        resultsTableBuilder(strat.rankingAlgorithm(query), "Documents", 0);
+    private void rankedRetrievalSelection(Strategy strat, String query,
+            DiskInvertedIndex dindex) {
+        resultsTableBuilder(strat.rankingAlgorithm(query, dindex),
+                "Documents", 0);
         
     }
     
@@ -400,7 +402,6 @@ public class SearchEngineGUI extends javax.swing.JFrame {
                 String currentDir = fileChooser.getSelectedFile()
                         .toString();
                 dindex = new DiskInvertedIndex(currentDir);
-                //creat biword disk index here
                 JOptionPane.showMessageDialog(this, "Successfully indexed "
                         + dindex.getDocumentCount() + " files.", "Indexed",
                         JOptionPane.INFORMATION_MESSAGE);

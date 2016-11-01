@@ -14,7 +14,8 @@ import java.util.ArrayList;
 public class OkapiRankedRetrieval implements Strategy {
 
     @Override
-    public ArrayList<String> rankingAlgorithm(String query) {
+    public ArrayList<String> rankingAlgorithm(String query, 
+            DiskInvertedIndex dindex) {
         System.out.println("okapi");
         
         return null;

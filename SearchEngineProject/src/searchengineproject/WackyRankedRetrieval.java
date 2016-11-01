@@ -14,7 +14,8 @@ import java.util.ArrayList;
 public class WackyRankedRetrieval implements Strategy {
 
     @Override
-    public ArrayList<String> rankingAlgorithm(String query) {
+    public ArrayList<String> rankingAlgorithm(String query, 
+            DiskInvertedIndex dindex) {
         System.out.println("wacky");
         
         return null;

@@ -14,7 +14,8 @@ import java.util.ArrayList;
 public class tfidfRankedRetrieval implements Strategy {
 
     @Override
-    public ArrayList<String> rankingAlgorithm(String query) {
+    public ArrayList<String> rankingAlgorithm(String query, 
+            DiskInvertedIndex dindex) {
         System.out.println("tdidf");
         
         return null;

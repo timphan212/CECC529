@@ -397,7 +397,6 @@ public class DiskInvertedIndex {
             byte[] buffer = new byte[8];
             docWeightsFile.read(buffer, 0, buffer.length);
             double ld = ByteBuffer.wrap(buffer).getDouble();
-            System.out.println(ld);
         } catch (IOException ex) {
             Logger.getLogger(DiskInvertedIndex.class.getName()).log(Level.SEVERE, null, ex);
         }

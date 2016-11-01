@@ -13,7 +13,8 @@ import java.util.ArrayList;
  */
 public class DefaultRankedRetrieval implements Strategy {
     @Override
-    public ArrayList<String> rankingAlgorithm(String query) {
+    public ArrayList<String> rankingAlgorithm(String query,
+            DiskInvertedIndex dindex) {
         System.out.println("default!");
         
         return null;
