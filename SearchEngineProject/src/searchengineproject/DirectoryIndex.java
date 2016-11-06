@@ -30,15 +30,16 @@ import java.util.logging.Logger;
  * @author Timothy
  */
 public class DirectoryIndex {
+    private static ArrayList<Integer> docLengthList;
     /**
      * Builds the normal NaiveInvertedIndex for the folder.
      */
     public static void buildIndexForDirectory(String folder) {
         PositionalInvertedIndex index = new PositionalInvertedIndex();
-        
+        docLengthList = new ArrayList<>();
         // Index the directory using a naive index
         indexFiles(folder, index);
-
+        addAvgDocLength(folder);
         // at this point, "index" contains the in-memory inverted index 
         // now we save the index to disk, building three files: the postings
         // index, the vocabulary list, and the vocabulary table.
@@ -240,7 +241,8 @@ public class DirectoryIndex {
             String term = tokeStream.nextToken();
             // counter to keep track of position
             int counter = 0;
-
+            String stemmedTerm = "";
+            
             // loop until the term returned is null
             while (term != null) {
                 // skip the term if the word is empty
@@ -249,24 +251,22 @@ public class DirectoryIndex {
                     // stem then index the token, then split the string by
                     // the hyphen, stem and add each word individually
                     if (term.contains("-")) {
-                        index.addTerm(PorterStemmer.processToken(term
-                                .replace("-", "")), docID, counter);
-                        updateTermFreqMap(PorterStemmer.processToken(term
-                                .replace("-", "")), termFreqMap);
+                        stemmedTerm = PorterStemmer
+                                .processToken(term.replaceAll("-", ""));
+                        index.addTerm(stemmedTerm, docID, counter);
+                        updateTermFreqMap(stemmedTerm, termFreqMap);
                         String[] hyphenWord = term.split("-");
 
                         for (String word : hyphenWord) {
-                            index.addTerm(PorterStemmer.processToken(word),
-                                    docID, counter);
-                            updateTermFreqMap(PorterStemmer.processToken(word),
-                                    termFreqMap);
+                            stemmedTerm = PorterStemmer.processToken(word);
+                            index.addTerm(stemmedTerm, docID, counter);
+                            updateTermFreqMap(stemmedTerm, termFreqMap);
                         }
                     } // stem and add the token to the positional inverted index
                     else {
-                        index.addTerm(PorterStemmer.processToken(term),
-                                docID, counter);
-                        updateTermFreqMap(PorterStemmer.processToken(term),
-                                    termFreqMap);
+                        stemmedTerm = PorterStemmer.processToken(term);
+                        index.addTerm(stemmedTerm, docID, counter);
+                        updateTermFreqMap(stemmedTerm, termFreqMap);
                     }
                 }
                 // get the next token and increment the position counter
@@ -275,7 +275,7 @@ public class DirectoryIndex {
             }
             
             //write document weight to the folder
-            buildWeightsFile(folder, termFreqMap);
+            buildWeightsFile(folder, termFreqMap, file.length());
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
@@ -287,10 +287,10 @@ public class DirectoryIndex {
      * @param index the term frequency index
      */
     private static void buildWeightsFile(String folder, 
-            HashMap<String, Integer> index) {
+            HashMap<String, Integer> index, long fileSize) {
         try {
-            double wdt = 0.0;
-            
+            double wdtSum = 0.0;
+            double tfsum = 0.0;
             // create a file called docWeights.bin
             File weightsFile = new File(folder, "docWeights.bin");
             // creates an output stream
@@ -310,17 +310,43 @@ public class DirectoryIndex {
             // loop through each term in the hashmap and calculate wdt then
             // raise it to the power of 2
             for(Entry<String, Integer> term : index.entrySet()) {
-                wdt += Math.pow((1 + Math.log(term.getValue())), 2);   
+                tfsum += term.getValue();                
+                double wdt = 1 + Math.log((double)term.getValue());                
+                wdtSum += Math.pow(wdt, 2);
             }
             
             // calculate ld by square rooting the sum of wdt^2
-            double ld = Math.sqrt(wdt);
+            double ld = Math.sqrt(wdtSum);
             // create a buffer to fit ld
             byte[] docWeightBytes = ByteBuffer.allocate(8)
                 .putDouble(ld).array();
             // write the buffer to the file
             weightsFileOutput
                 .write(docWeightBytes, 0, docWeightBytes.length);
+            
+            // get the number of tokens in the document
+            double docLengthd = index.size();
+            // add the number of tokens in the documents to the list
+            docLengthList.add((int)docLengthd);
+            // create a buffer to fit doc length
+            byte[] docLengthBytes = ByteBuffer.allocate(8).putDouble(docLengthd)
+                    .array();
+            // write the buffer to the file
+            weightsFileOutput.write(docLengthBytes, 0, docLengthBytes.length);
+            
+            // create a buffer to fit file size
+            byte[] fileSizeBytes = ByteBuffer.allocate(8)
+                    .putDouble((double)fileSize).array();
+            // write the buffer to the file
+            weightsFileOutput.write(fileSizeBytes, 0, fileSizeBytes.length);
+            
+            // calculate ave(tftd)
+            double avgtf = tfsum/index.size();
+            // create a buffer to fit ave(tftd)
+            byte[] docAvgBytes = ByteBuffer.allocate(8).putDouble(avgtf)
+                    .array();
+            // write the buffer to the file
+            weightsFileOutput.write(docAvgBytes, 0, docAvgBytes.length);
         } catch (FileNotFoundException ex) {
             Logger.getLogger(DirectoryIndex.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
@@ -344,6 +370,43 @@ public class DirectoryIndex {
         // frequency to 1
         else {
             termFreqMap.put(term, 1);
+        }
+    }
+
+    private static void addAvgDocLength(String folder) {
+        try {
+            // create a file called docWeights.bin
+            File weightsFile = new File(folder, "docWeights.bin");
+            // creates an output stream
+            FileOutputStream weightsFileOutput = null;
+
+            // if the file already exists then append the doc weight to the end
+            // of the file
+            if (weightsFile.exists()) {
+                weightsFileOutput = new FileOutputStream(weightsFile, true);
+            } // otherwise create a new file
+            else {
+                weightsFile.createNewFile();
+                weightsFileOutput = new FileOutputStream(weightsFile);
+            }
+            
+            int docLengthSum = 0;
+            
+            for(int docLen : docLengthList) {
+                docLengthSum += docLen;
+            }
+            
+            double docLengthA = (double)docLengthSum/docLengthList.size();
+            // create a buffer to fit doc length
+            byte[] docLengthBytes = ByteBuffer.allocate(8).putDouble(docLengthA)
+                    .array();
+            // write the buffer to the file
+            weightsFileOutput.write(docLengthBytes, 0, docLengthBytes.length);
+            
+        } catch (FileNotFoundException ex) {
+            Logger.getLogger(DirectoryIndex.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            Logger.getLogger(DirectoryIndex.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
 }

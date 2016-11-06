@@ -38,6 +38,7 @@ public class DefaultRankedRetrieval implements Strategy {
             double dft = posPostList.size();
             // Get wqt from the formula
             double wqt = Math.log(1 + (n/dft));
+            System.out.println("wqt: " + wqt);
             double accumulator = 0;
             
             // Loop through the positional posting in the array list
@@ -58,6 +59,7 @@ public class DefaultRankedRetrieval implements Strategy {
                 double tftd = posPost.getPositions().size();
                 // Get wdt from the following formula
                 double wdt =  1 + Math.log(tftd);
+                System.out.println("wdt: " + wdt);
                 // Increment accumulator by multiplying wdt with wqt
                 accumulator += wdt * wqt;
                 // Map the document id to the accumulator
@@ -76,6 +78,8 @@ public class DefaultRankedRetrieval implements Strategy {
             if(entry.getValue() > 0) {
                 // Get the document weight from the file
                 double ld = dindex.getDocWeight(entry.getKey());
+                System.out.println(dindex.getFileNames(entry.getKey())
+                        + " weight: " + ld);
                 // Create a new accumulator posting object
                 AccumulatorPosting ap = new AccumulatorPosting(entry.getKey(),
                         entry.getValue()/ld);
@@ -84,6 +88,7 @@ public class DefaultRankedRetrieval implements Strategy {
             }
         }
         
+        System.out.println();
         // Loop through the first 10 entries in the priority queue, break if
         // there are less than 10
         for(int i = 0; i < 10; i++) {

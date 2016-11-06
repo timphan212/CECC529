@@ -386,9 +386,9 @@ public class DiskInvertedIndex {
     }
     
     private double findDocWeight(int documentID, 
-            RandomAccessFile docWeightsFile) {
+            RandomAccessFile docWeightsFile, int offset) {
         try {
-            docWeightsFile.seek(documentID*8);
+            docWeightsFile.seek(documentID*32+offset);
             byte[] buffer = new byte[8];
             docWeightsFile.read(buffer, 0, buffer.length);
             
@@ -402,6 +402,22 @@ public class DiskInvertedIndex {
     }
     
     public double getDocWeight(int documentID) {
-        return findDocWeight(documentID, docWeights);
+        return findDocWeight(documentID, docWeights, 0);
+    }
+    
+    public double getDocLength(int documentID) {
+        return findDocWeight(documentID, docWeights, 8);
+    }
+    
+    public double getDocByteSize(int documentID) {
+        return findDocWeight(documentID, docWeights, 16);
+    }
+    
+    public double getAverageTermFreq(int documentID) {
+        return findDocWeight(documentID, docWeights, 24);
+    }
+    
+    public double getAverageDocLength() {
+        return findDocWeight(fileNames.size(), docWeights, 0);
     }
 }
