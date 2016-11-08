@@ -29,12 +29,16 @@ public class WackyRankedRetrieval implements Strategy {
             // Get the list of positional posting for the term
             ArrayList<PositionalPosting> posPostList = dindex.GetPostings(
                     PorterStemmer.processToken(tokens[i]), true);
+            
+            if(posPostList == null) {
+                return null;
+            }
+            
             // Get dft which is the size of the positional posting array list
             double dft = posPostList.size();
             // Get wqt from the formula
             double wqtWacky = Math.log((n-dft)/dft);
             double wqt = Math.max(0, wqtWacky);
-            System.out.println("wqt: " + wqt);
             double accumulator = 0;
             
             // Loop through the positional posting in the array list
@@ -56,7 +60,6 @@ public class WackyRankedRetrieval implements Strategy {
                 // Get wdt from the following formula
                 double wdt = (1 + Math.log(tftd))/(1 + Math.log(dindex
                         .getAverageTermFreq(posPost.getDocID())));
-                System.out.println("wdt: " + wdt);
                 // Increment accumulator by multiplying wdt with wqt
                 accumulator += wdt * wqt;
                 // Map the document id to the accumulator
@@ -75,8 +78,6 @@ public class WackyRankedRetrieval implements Strategy {
             if(entry.getValue() > 0) {
                 // Get the document weight from the file
                 double ld = Math.sqrt(dindex.getDocByteSize(entry.getKey()));
-                System.out.println(dindex.getFileNames(entry.getKey())
-                        + " weight: " + ld);
                 // Create a new accumulator posting object
                 AccumulatorPosting ap = new AccumulatorPosting(entry.getKey(),
                         entry.getValue()/ld);
@@ -85,7 +86,6 @@ public class WackyRankedRetrieval implements Strategy {
             }
         }
         
-        System.out.println();
         // Loop through the first 10 entries in the priority queue, break if
         // there are less than 10
         for(int i = 0; i < 10; i++) {

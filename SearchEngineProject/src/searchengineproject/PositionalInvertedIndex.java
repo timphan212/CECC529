@@ -78,15 +78,27 @@ public class PositionalInvertedIndex {
         return pospost;
     }
     
+    /**
+     * Get the arraylist of positional posting for the specified term
+     * @param term the term to look for
+     * @return an arraylist of positional posting
+     */
     public ArrayList<PositionalPosting> getPositionalPosting(String term) {
         return mIndex.get(term);
     }
     
+    /**
+     * Get the term count of the positional index
+     * @return an integer representing the size of the index
+     */
     public int getTermCount() {
         return mIndex.size();
     }
     
-    
+    /**
+     * Get all the terms in the index
+     * @return an array of string with all the terms in the index
+     */
     public String[] getTerms() {
         String[] terms = mIndex.keySet().toArray(new String[mIndex.size()]);
         Arrays.sort(terms);

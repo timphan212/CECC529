@@ -368,19 +368,21 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         model.setColumnCount(1);
         model.setColumnIdentifiers(columnNames);
         
-        for(String file : results) {
-            model.addRow(new Object[]{file});
+        if(results != null) {
+            for(String file : results) {
+                model.addRow(new Object[]{file});
+            }
+
+            if(type == 0) {
+                count = "Documents found: ";
+
+            }
+            else {
+                count = "Vocabulary found: ";
+            }
+
+            docsFoundLabel.setText(count + results.size());    
         }
-        
-        if(type == 0) {
-            count = "Documents found: ";
-            
-        }
-        else {
-            count = "Vocabulary found: ";
-        }
-        
-        docsFoundLabel.setText(count + results.size());    
     }
     
     /**
@@ -396,12 +398,14 @@ public class SearchEngineGUI extends javax.swing.JFrame {
         model.setColumnCount(2);
         model.setColumnIdentifiers(columnNames);
         
-        for(AccumulatorPosting ap : results) {
-            String fileName = dindex.getFileNames(ap.getDocID());
-            model.addRow(new Object[]{fileName, ap.getAccumulator()});
+        if(results != null) {
+            for(AccumulatorPosting ap : results) {
+                String fileName = dindex.getFileNames(ap.getDocID());
+                model.addRow(new Object[]{fileName, ap.getAccumulator()});
+            }
+
+            docsFoundLabel.setText("Documents found: " + results.size());
         }
-        
-        docsFoundLabel.setText("Documents found: " + results.size());
     }
     /**
      * Displays the vocabulary for the biword index when selected from the

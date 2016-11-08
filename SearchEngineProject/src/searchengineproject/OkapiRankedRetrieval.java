@@ -29,12 +29,16 @@ public class OkapiRankedRetrieval implements Strategy {
             // Get the list of positional posting for the term
             ArrayList<PositionalPosting> posPostList = dindex.GetPostings(
                     PorterStemmer.processToken(tokens[i]), true);
-            // Get dft which is the size of the positional posting array list
+            
+            if(posPostList == null) {
+                return null;
+            
+            }
+            // Get dft which is the size of the positional posting array list            
             double dft = posPostList.size();
             // Get wqt from the formula
             double wqtOkapi = Math.log((n-dft+0.5)/(dft+0.5));
             double wqt = Math.max(0.1, wqtOkapi);
-            System.out.println("wqt: " + wqt);
             double accumulator = 0;
             
             // Loop through the positional posting in the array list
@@ -57,9 +61,7 @@ public class OkapiRankedRetrieval implements Strategy {
                 double kd = (1.2) * (0.25 + 0.75 * (
                         dindex.getDocLength(posPost.getDocID()) /
                         dindex.getAverageDocLength()));
-                System.out.println("kd: " + kd);
                 double wdt = (2.2*tftd)/(kd+tftd);
-                System.out.println("wdt: " + wdt);
                 // Increment accumulator by multiplying wdt with wqt
                 accumulator += wdt * wqt;
                 // Map the document id to the accumulator
@@ -67,7 +69,6 @@ public class OkapiRankedRetrieval implements Strategy {
             }
         }
         
-        System.out.println();
         // Create a new priority queue based on the size of the accumulator map
         // and use the comparator in AccumulatorPQSort.java
         PriorityQueue<AccumulatorPosting> pq = new PriorityQueue<>(

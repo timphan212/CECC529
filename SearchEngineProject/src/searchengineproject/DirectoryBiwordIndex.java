@@ -11,7 +11,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.nio.ByteBuffer;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
@@ -115,6 +114,11 @@ public class DirectoryBiwordIndex {
         }
     } 
     
+    /**
+     * Loop through the directory and index each file
+     * @param folder the folder location
+     * @param index the biword index
+     */
     private static void indexFiles(String folder,
             final BiwordIndex index) {
         final Path currentWorkingPath = Paths.get(folder).toAbsolutePath();
