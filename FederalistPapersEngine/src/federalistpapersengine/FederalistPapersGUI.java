@@ -66,12 +66,13 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
         fileMenuBar = new javax.swing.JMenuBar();
         fileMenu = new javax.swing.JMenu();
         openMenuItem = new javax.swing.JMenuItem();
+        openExistingMenuItem = new javax.swing.JMenuItem();
 
         directoryChooser.setFileSelectionMode(javax.swing.JFileChooser.DIRECTORIES_ONLY);
 
         setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
         setTitle("Who Wrote the Federalist Papers?");
-        getContentPane().setLayout(new java.awt.GridLayout());
+        getContentPane().setLayout(new java.awt.GridLayout(1, 0));
 
         hamiltonTable.setModel(new javax.swing.table.DefaultTableModel(
             new Object [][] {
@@ -322,6 +323,14 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
                     });
                     fileMenu.add(openMenuItem);
 
+                    openExistingMenuItem.setText("Open Existing Files");
+                    openExistingMenuItem.addActionListener(new java.awt.event.ActionListener() {
+                        public void actionPerformed(java.awt.event.ActionEvent evt) {
+                            openExistingMenuItemActionPerformed(evt);
+                        }
+                    });
+                    fileMenu.add(openExistingMenuItem);
+
                     fileMenuBar.add(fileMenu);
 
                     setJMenuBar(fileMenuBar);
@@ -331,16 +340,20 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
 
     private void openMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openMenuItemActionPerformed
         if (directoryChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
-            String currentDir = directoryChooser.getSelectedFile()
-                    .toString();
-            /*DirectoryIndex.buildIndexForDirectory(currentDir);
-                DirectoryBiwordIndex.buildIndexForDirectory(currentDir);
+            try {
+                DirectoryIndex index = new DirectoryIndex();
+                String currentDir = directoryChooser.getSelectedFile()
+                        .toString();
+                index.buildIndexForDirectory(currentDir);
                 dindex = new DiskInvertedIndex(currentDir);
-             */
-            JOptionPane.showMessageDialog(this, "Successfully indexed "
-                    + currentDir + " files.", "Indexed",
-                    JOptionPane.INFORMATION_MESSAGE);
-        }   
+                
+                JOptionPane.showMessageDialog(this, "Successfully indexed "
+                        + currentDir + " files.", "Indexed",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException ex) {
+                Logger.getLogger(FederalistPapersGUI.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } 
     }//GEN-LAST:event_openMenuItemActionPerformed
 
     private void rocchioButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rocchioButtonActionPerformed
@@ -350,6 +363,22 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
     private void bayesianButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bayesianButtonActionPerformed
         // pass info to bayesian
     }//GEN-LAST:event_bayesianButtonActionPerformed
+
+    private void openExistingMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openExistingMenuItemActionPerformed
+        if (directoryChooser.showOpenDialog(this) == JFileChooser.APPROVE_OPTION) {
+            try {
+                String currentDir = directoryChooser.getSelectedFile()
+                        .toString();
+                dindex = new DiskInvertedIndex(currentDir);
+                
+                JOptionPane.showMessageDialog(this, "Successfully indexed "
+                        + currentDir + " files.", "Indexed",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } catch (IOException ex) {
+                Logger.getLogger(FederalistPapersGUI.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        } 
+    }//GEN-LAST:event_openExistingMenuItemActionPerformed
 
     /**
      * When a user clicks on the file it opens a new window containing the
@@ -443,7 +472,8 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
             }
         });
     }
-
+    
+    DiskInvertedIndex dindex;
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton bayesianButton;
     private javax.swing.JFileChooser directoryChooser;
@@ -465,6 +495,7 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
     private javax.swing.JScrollPane madisonScrollPane;
     private javax.swing.JTable madisonTable;
     private javax.swing.JPanel mainPanel;
+    private javax.swing.JMenuItem openExistingMenuItem;
     private javax.swing.JMenuItem openMenuItem;
     private javax.swing.JButton rocchioButton;
     // End of variables declaration//GEN-END:variables
