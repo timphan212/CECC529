@@ -14,9 +14,8 @@ import java.util.HashMap;
  */
 public class JayDocuments {
     private ArrayList<Integer> files;
-    private ArrayList<Double> wdtVector;
     private double centroid;
-    private HashMap<Integer, ArrayList<Double>> docVec;
+    private HashMap<Integer, double[]> docVec;
     
     public JayDocuments(ArrayList<Integer> files) {
         this.files = files;
@@ -34,19 +33,11 @@ public class JayDocuments {
         this.centroid = centroid;
     }
     
-    public void getDocumentVector(DiskInvertedIndex dindex) {
-        ArrayList<String> terms = dindex.getPositionalIndexTerms();
-        
-        for(String term : terms) {
-            ArrayList<PositionalPosting> posPostList = dindex.GetPostings(term, true);
-            
-            for(PositionalPosting posPost : posPostList) {
-                for(Integer file : files) {
-                    if(file == posPost.getDocID()) {
-                        
-                    }
-                }
-            }
-        }
+    public void setDocVector(HashMap<Integer, double[]> docVec) {
+        this.docVec = docVec;
+    }
+    
+    public HashMap<Integer, double[]> getDocVector() {
+        return this.docVec;
     }
 }

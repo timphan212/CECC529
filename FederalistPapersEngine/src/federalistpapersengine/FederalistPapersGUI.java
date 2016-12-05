@@ -13,6 +13,9 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map.Entry;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
@@ -388,9 +391,6 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
                         .toString();
                 dindex = new DiskInvertedIndex(currentDir);
                 initializeClasses(currentDir);
-                System.out.println(jDocs.getCentroid());
-                System.out.println(hDocs.getCentroid());
-                System.out.println(mDocs.getCentroid());
                 JOptionPane.showMessageDialog(this, "Successfully indexed "
                         + currentDir + " files.", "Indexed",
                         JOptionPane.INFORMATION_MESSAGE);
@@ -465,6 +465,8 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
             files = DiskInvertedIndex.readAllFileNames(path + "\\JAY");
             docIDs = getDocIdList(files);
             jDocs = new JayDocuments(docIDs);
+
+            
             files = DiskInvertedIndex.readAllFileNames(path + "\\MADISON");
             docIDs = getDocIdList(files);
             mDocs = new MadisonDocuments(docIDs);
@@ -494,13 +496,39 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
     
     private double calculateCentroid(ArrayList<Integer> files) {
         double sum = 0.0;
-        // for each document in the list
-        // 
+        
         for (int i = 0; i < files.size(); i++) {
             sum += dindex.getDocWeight(files.get(i));
         }
 
         return sum / files.size();
+    }
+    
+    private HashMap<Integer, double[]> getDocumentVectors(ArrayList<Integer> files) {
+        HashMap<Integer, double[]> docVector = new HashMap<>();
+        
+        for(Integer file : files) {
+            double[] vector = new double[dindex.getTermCount()];
+            double ld = dindex.getDocWeight(file);
+            ArrayList<String> terms = dindex.getPositionalIndexTerms();
+            
+            for(int i = 0; i < terms.size(); i++) {
+                String term = terms.get(i);
+                ArrayList<PositionalPosting> postings = dindex.GetPostings(term, true);
+                
+                for(PositionalPosting posting : postings) {
+                    if(file == posting.getDocID()) {
+                        double tftd = posting.getPositions().size();
+                        vector[i] = (1 + Math.log(tftd))/ld;
+                        break;
+                    }
+                }
+            }
+            
+            docVector.put(file, vector);
+        }
+        
+        return docVector;
     }
     
     /**
