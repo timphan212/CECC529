@@ -30,8 +30,8 @@ public class DiskInvertedIndex {
             mVocabList = new RandomAccessFile(new File(path, "vocab.bin"), "r");
             mPostings = new RandomAccessFile(new File(path, "postings.bin"), "r");
             mVocabTable = readVocabTable(path, "vocabTable.bin");
-            readAllFileNames(path + "\\ALL");
-            readAllFileNames(path + "\\HAMILTON OR MADISON");
+            fileNames = readAllFileNames(path + "\\ALL");
+            fileNames.addAll(readAllFileNames(path + "\\HAMILTON OR MADISON"));
             docWeights = new RandomAccessFile(new File(path, "docWeights.bin"), "r");
         } catch (FileNotFoundException ex) {
             System.out.println(ex.toString());
@@ -144,40 +144,6 @@ public class DiskInvertedIndex {
             System.out.println(ex.toString());
         }
         return null;
-    }
-
-    private static ArrayList<Integer> readBiwordPostings(
-            RandomAccessFile postings, long postingsPosition) {
-        try {
-            // seek to the position in the file where the postings start.
-            postings.seek(postingsPosition);
-
-            // read the 4 bytes for the document frequency
-            byte[] buffer = new byte[4];
-            postings.read(buffer, 0, buffer.length);
-
-            // use ByteBuffer to convert the 4 bytes into an int.
-            int documentFrequency = ByteBuffer.wrap(buffer).getInt();
-
-            int lastDocId = 0;
-            ArrayList<Integer> postList = new ArrayList<>();
-
-            for (int i = 0; i < documentFrequency; i++) {
-                // read the document id
-                byte[] docBuffer = new byte[4];
-                postings.read(docBuffer, 0, docBuffer.length);
-                int documentID = ByteBuffer.wrap(docBuffer).getInt() + lastDocId;
-                lastDocId = documentID;
-
-                postList.add(documentID);
-            }
-
-            return postList;
-        } catch (IOException ex) {
-            System.out.println(ex.toString());
-        }
-        return null;
-
     }
     
     /**
@@ -298,8 +264,9 @@ public class DiskInvertedIndex {
      * @return an arraylist of strings containing the file names
      * @throws IOException 
      */
-    private void readAllFileNames(String path) throws IOException {
+    public static ArrayList<String> readAllFileNames(String path) throws IOException {
         final Path currentWorkingPath = Paths.get(path).toAbsolutePath();
+        ArrayList<String> files = new ArrayList<>();
         
         Files.walkFileTree(currentWorkingPath, new SimpleFileVisitor<Path>() {
             int mDocumentID = 0;
@@ -320,7 +287,7 @@ public class DiskInvertedIndex {
                     // we have found a .json file; add its name to the fileName
                     // list, then index the file and increase the document ID
                     // counter.
-                    fileNames.add(file.getFileName().toString());
+                    files.add(file.getFileName().toString());
                 }
                 return FileVisitResult.CONTINUE;
             }
@@ -333,6 +300,8 @@ public class DiskInvertedIndex {
             }
 
         });
+        
+        return files;
     }
     
     /**
@@ -462,5 +431,13 @@ public class DiskInvertedIndex {
      */
     public double getAverageDocLength() {
         return findDocWeight(fileNames.size(), docWeights, 0);
+    }
+    
+    /**
+     * Get a list of all the file names
+     * @return 
+     */
+    public ArrayList<String> getFileNameList() {
+        return this.fileNames;
     }
 }

@@ -12,6 +12,7 @@ import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
@@ -346,7 +347,7 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
                         .toString();
                 index.buildIndexForDirectory(currentDir);
                 dindex = new DiskInvertedIndex(currentDir);
-                
+                initializeClasses(currentDir);
                 JOptionPane.showMessageDialog(this, "Successfully indexed "
                         + currentDir + " files.", "Indexed",
                         JOptionPane.INFORMATION_MESSAGE);
@@ -357,11 +358,27 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
     }//GEN-LAST:event_openMenuItemActionPerformed
 
     private void rocchioButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rocchioButtonActionPerformed
-        // pass info to rocchio
+        if (dindex == null) {
+            JOptionPane.showMessageDialog(this, "Index is null."
+                    , "Index error!", JOptionPane.ERROR);
+        }
+        else {
+                // calculate hamilton, jay, and madison centroids
+                    // loop through each document
+                        // get wdt for each term in the document
+                        // divide each by ld
+                        // add to previous vector
+                    // divide by total count of docs in class
+                // go through disputed docs
+                    // calculate    
+        }
     }//GEN-LAST:event_rocchioButtonActionPerformed
 
     private void bayesianButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bayesianButtonActionPerformed
-        // pass info to bayesian
+        if (dindex == null) {
+            JOptionPane.showMessageDialog(this, "Index is null."
+                    , "Index error!", JOptionPane.ERROR);
+        }
     }//GEN-LAST:event_bayesianButtonActionPerformed
 
     private void openExistingMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openExistingMenuItemActionPerformed
@@ -370,7 +387,10 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
                 String currentDir = directoryChooser.getSelectedFile()
                         .toString();
                 dindex = new DiskInvertedIndex(currentDir);
-                
+                initializeClasses(currentDir);
+                System.out.println(jDocs.getCentroid());
+                System.out.println(hDocs.getCentroid());
+                System.out.println(mDocs.getCentroid());
                 JOptionPane.showMessageDialog(this, "Successfully indexed "
                         + currentDir + " files.", "Indexed",
                         JOptionPane.INFORMATION_MESSAGE);
@@ -438,6 +458,51 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
         }
     }
     
+    private void initializeClasses(String path) {
+        try {
+            ArrayList<String> files;
+            ArrayList<Integer> docIDs;
+            files = DiskInvertedIndex.readAllFileNames(path + "\\JAY");
+            docIDs = getDocIdList(files);
+            jDocs = new JayDocuments(docIDs);
+            files = DiskInvertedIndex.readAllFileNames(path + "\\MADISON");
+            docIDs = getDocIdList(files);
+            mDocs = new MadisonDocuments(docIDs);
+            files = DiskInvertedIndex.readAllFileNames(path + "\\HAMILTON");
+            docIDs = getDocIdList(files);
+            hDocs = new HamiltonDocuments(docIDs);
+        } catch (IOException ex) {
+            Logger.getLogger(FederalistPapersGUI.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    private ArrayList<Integer> getDocIdList(ArrayList<String> files) {
+        ArrayList<String> allFiles = dindex.getFileNameList();
+        ArrayList<Integer> docIDs = new ArrayList<>();
+        
+        for(int i = 0; i < files.size(); i++) {
+            for(int j = 0; j < allFiles.size(); j++) {
+                if(files.get(i).compareTo(allFiles.get(j)) == 0) {
+                    docIDs.add(j);
+                    break;
+                }
+            }
+        }
+        
+        return docIDs;
+    }
+    
+    private double calculateCentroid(ArrayList<Integer> files) {
+        double sum = 0.0;
+        // for each document in the list
+        // 
+        for (int i = 0; i < files.size(); i++) {
+            sum += dindex.getDocWeight(files.get(i));
+        }
+
+        return sum / files.size();
+    }
+    
     /**
      * @param args the command line arguments
      */
@@ -473,6 +538,9 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
         });
     }
     
+    JayDocuments jDocs;
+    MadisonDocuments mDocs;
+    HamiltonDocuments hDocs;
     DiskInvertedIndex dindex;
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton bayesianButton;
