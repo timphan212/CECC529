@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 public class DirectoryIndex {
     private ArrayList<Integer> docLengthList;
     private PositionalInvertedIndex index;
+    private int mDocumentID = 0;
     
     public DirectoryIndex() {
         index = new PositionalInvertedIndex();
@@ -49,15 +50,14 @@ public class DirectoryIndex {
         // an array of positions in the vocabulary file
         long[] vocabPositions = new long[dictionary.length];
         buildVocabFile(folder, dictionary, vocabPositions, "vocab.bin");
-        buildPostingsFile(folder, index, dictionary, vocabPositions);
+        buildPostingsFile(folder, dictionary, vocabPositions);
     }
     
     /**
      * Builds the postings.bin file for the indexed directory, using the given
      * NaiveInvertedIndex of that directory.
      */
-    private static void buildPostingsFile(String folder,
-            PositionalInvertedIndex index, String[] dictionary,
+    private void buildPostingsFile(String folder, String[] dictionary,
             long[] vocabPositions) {
         FileOutputStream postingsFile = null;
         
@@ -102,14 +102,13 @@ public class DirectoryIndex {
                         .putInt(postings.size()).array();
                 postingsFile.write(docFreqBytes, 0, docFreqBytes.length);
 
-                int lastDocId = 0, lastPosId = 0;
+                int lastPosId = 0;
 
                 for (PositionalPosting post : postings) {
                     // write the document id
                     byte[] docIdBytes = ByteBuffer.allocate(4)
-                            .putInt(post.getDocID() - lastDocId).array();
+                            .putInt(post.getDocID()).array();
                     postingsFile.write(docIdBytes, 0, docIdBytes.length);
-                    lastDocId = post.getDocID();
                     // write term frequency for document
                     byte[] termFreqBytes = ByteBuffer.allocate(4)
                             .putInt(post.getPositions().size()).array();
@@ -137,7 +136,7 @@ public class DirectoryIndex {
         }
     } 
 
-    public static void buildVocabFile(String folder, String[] dictionary,
+    public void buildVocabFile(String folder, String[] dictionary,
             long[] vocabPositions, String fileName) {
         OutputStreamWriter vocabList = null;
 
@@ -176,7 +175,6 @@ public class DirectoryIndex {
         try {
             Files.walkFileTree(currentWorkingPath,
                     new SimpleFileVisitor<Path>() {
-                int mDocumentID = 0;
 
                 public FileVisitResult preVisitDirectory(Path dir,
                         BasicFileAttributes attrs) {
@@ -272,7 +270,7 @@ public class DirectoryIndex {
      * @param index the term frequency index
      */
     private void buildWeightsFile(String folder, 
-            HashMap<String, Integer> index, long fileSize) {
+            HashMap<String, Integer> termIndex, long fileSize) {
         try {
             double wdtSum = 0.0;
             double tfsum = 0.0;
@@ -294,7 +292,7 @@ public class DirectoryIndex {
             
             // loop through each term in the hashmap and calculate wdt then
             // raise it to the power of 2
-            for(Entry<String, Integer> term : index.entrySet()) {
+            for(Entry<String, Integer> term : termIndex.entrySet()) {
                 tfsum += term.getValue();                
                 double wdt = 1 + Math.log((double)term.getValue());                
                 wdtSum += Math.pow(wdt, 2);
@@ -310,7 +308,7 @@ public class DirectoryIndex {
                 .write(docWeightBytes, 0, docWeightBytes.length);
             
             // get the number of tokens in the document
-            double docLengthd = index.size();
+            double docLengthd = termIndex.size();
             // add the number of tokens in the documents to the list
             docLengthList.add((int)docLengthd);
             // create a buffer to fit doc length
@@ -326,7 +324,7 @@ public class DirectoryIndex {
             weightsFileOutput.write(fileSizeBytes, 0, fileSizeBytes.length);
             
             // calculate ave(tftd)
-            double avgtf = tfsum/index.size();
+            double avgtf = tfsum/termIndex.size();
             // create a buffer to fit ave(tftd)
             byte[] docAvgBytes = ByteBuffer.allocate(8).putDouble(avgtf)
                     .array();

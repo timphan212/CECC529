@@ -13,7 +13,7 @@ import java.util.ArrayList;
  */
 public class HamiltonDocuments {
     private ArrayList<Integer> files;
-    private double centroid;
+    private double[] centroid;
     
     public HamiltonDocuments(ArrayList<Integer> files) {
         this.files = files;
@@ -23,11 +23,15 @@ public class HamiltonDocuments {
         return this.files;
     }
     
-    public double getCentroid() {
+    public void setFiles(ArrayList<Integer> files) {
+        this.files = files;
+    }
+    
+    public double[] getCentroid() {
         return this.centroid;
     }
     
-    public void setCentroid(double centroid) {
+    public void setCentroid(double[] centroid) {
         this.centroid = centroid;
     }
 }

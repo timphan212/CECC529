@@ -13,7 +13,7 @@ import java.util.ArrayList;
  */
 public class MadisonDocuments {
     private ArrayList<Integer> files;
-    private double centroid;
+    private double[] centroid;
     
     public MadisonDocuments(ArrayList<Integer> files) {
         this.files = files;
@@ -22,12 +22,16 @@ public class MadisonDocuments {
     public ArrayList<Integer> getFiles() {
         return this.files;
     }
+
+    public void setFiles(ArrayList<Integer> files) {
+        this.files = files;
+    }
     
-    public double getCentroid() {
+    public double[] getCentroid() {
         return this.centroid;
     }
     
-    public void setCentroid(double centroid) {
+    public void setCentroid(double[] centroid) {
         this.centroid = centroid;
     }
 }

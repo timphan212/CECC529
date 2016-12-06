@@ -13,6 +13,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import java.util.Vector;
@@ -24,8 +25,10 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
+import javax.swing.table.DefaultTableModel;
 /**
  *
  * @author Tim
@@ -351,7 +354,7 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
                 index.buildIndexForDirectory(currentDir);
                 dindex = new DiskInvertedIndex(currentDir);
                 initializeClasses(currentDir);
-                initializeDocumentVectors();
+                
                 JOptionPane.showMessageDialog(this, "Successfully indexed "
                         + currentDir + " files.", "Indexed",
                         JOptionPane.INFORMATION_MESSAGE);
@@ -367,14 +370,40 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
                     , "Index error!", JOptionPane.ERROR);
         }
         else {
-                // calculate hamilton, jay, and madison centroids
-                    // loop through each document
-                        // get wdt for each term in the document
-                        // divide each by ld
-                        // add to previous vector
-                    // divide by total count of docs in class
-                // go through disputed docs
-                    // calculate    
+            double[] hCentroid = hDocs.getCentroid();
+            double[] mCentroid = mDocs.getCentroid();
+            double[] jCentroid = jDocs.getCentroid();
+            
+            for(int doc : disputedDocs) {
+                double[] docVector = documentVectors.get(doc);
+                double hResults = calculateClosestCentroid(hCentroid, docVector);
+                double mResults = calculateClosestCentroid(mCentroid, docVector);
+                double jResults = calculateClosestCentroid(jCentroid, docVector);
+                
+                if(hResults < mResults) {
+                    if(hResults < jResults) {
+                        ArrayList<Integer> hDocList = hDocs.getFiles();
+                        hDocList.add(doc);
+                        hDocs.setFiles(hDocList);
+                    }
+                }
+                else {
+                    if(mResults < jResults) {
+                        ArrayList<Integer> mDocList = mDocs.getFiles();
+                        mDocList.add(doc);
+                        mDocs.setFiles(mDocList);
+                    }
+                    else {
+                        ArrayList<Integer> jDocList = jDocs.getFiles();
+                        jDocList.add(doc);
+                        jDocs.setFiles(jDocList);
+                    }
+                }
+            }
+            
+            displayFiles(hamiltonTable, hDocs.getFiles(), hamiltonFileLabel);
+            displayFiles(madisonTable, mDocs.getFiles(), madisonFileLabel);
+            displayFiles(jayTable, jDocs.getFiles(), jayFileLabel);
         }
     }//GEN-LAST:event_rocchioButtonActionPerformed
 
@@ -392,8 +421,7 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
                         .toString();
                 dindex = new DiskInvertedIndex(currentDir);
                 initializeClasses(currentDir);
-                initializeDocumentVectors();
-                System.out.println(documentVectors.size());
+
                 JOptionPane.showMessageDialog(this, "Successfully indexed "
                         + currentDir + " files.", "Indexed",
                         JOptionPane.INFORMATION_MESSAGE);
@@ -451,8 +479,8 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
      */
     private String getFolder(String file) {
         String path = directoryChooser.getSelectedFile().getAbsolutePath();
-        int num = Integer.parseInt(file.substring(6, 7));
-        
+        int num = Integer.parseInt(file.substring(6, 8));
+
         if((num >= 49 && num <= 57) || num == 62 || num == 63) {
             return path + "\\HAMILTON OR MADISON\\" + file;
         }
@@ -461,27 +489,45 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
         }
     }
     
+    /**
+     * Create the document vectors based on the index then calculate the
+     * centroid for each class
+     * @param path string value representing the path to the folders
+     */
     private void initializeClasses(String path) {
         try {
             ArrayList<String> files;
             ArrayList<Integer> docIDs;
             
+            initializeDocumentVectors();
+            
             files = DiskInvertedIndex.readAllFileNames(path + "\\JAY");
             docIDs = getDocIdList(files);
             jDocs = new JayDocuments(docIDs);
-
+            jDocs.setCentroid(calculateCentroid(jDocs.getFiles()));
+            
             files = DiskInvertedIndex.readAllFileNames(path + "\\MADISON");
             docIDs = getDocIdList(files);
             mDocs = new MadisonDocuments(docIDs);
+            mDocs.setCentroid(calculateCentroid(mDocs.getFiles()));
             
             files = DiskInvertedIndex.readAllFileNames(path + "\\HAMILTON");
             docIDs = getDocIdList(files);
             hDocs = new HamiltonDocuments(docIDs);
+            hDocs.setCentroid(calculateCentroid(hDocs.getFiles()));
+            
+            files = DiskInvertedIndex.readAllFileNames(path + "\\HAMILTON OR MADISON");
+            disputedDocs = getDocIdList(files);
         } catch (IOException ex) {
             Logger.getLogger(FederalistPapersGUI.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
     
+    /**
+     * Convert the document names into a more usable document id
+     * @param files arraylist of string representing the file names
+     * @return 
+     */
     private ArrayList<Integer> getDocIdList(ArrayList<String> files) {
         ArrayList<String> allFiles = dindex.getFileNameList();
         ArrayList<Integer> docIDs = new ArrayList<>();
@@ -498,45 +544,12 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
         return docIDs;
     }
     
-    private double calculateCentroid(ArrayList<Integer> files) {
-        double sum = 0.0;
-        
-        for (int i = 0; i < files.size(); i++) {
-            sum += dindex.getDocWeight(files.get(i));
-        }
-
-        return sum / files.size();
-    }
-    
-    private HashMap<Integer, double[]> getDocumentVectors(ArrayList<Integer> files) {
-        HashMap<Integer, double[]> docVector = new HashMap<>();
-        
-        for(Integer file : files) {
-            double[] vector = new double[dindex.getTermCount()];
-            double ld = dindex.getDocWeight(file);
-            ArrayList<String> terms = dindex.getPositionalIndexTerms();
-            
-            for(int i = 0; i < terms.size(); i++) {
-                String term = terms.get(i);
-                ArrayList<PositionalPosting> postings = dindex.GetPostings(term, true);
-                
-                for(PositionalPosting posting : postings) {
-                    if(file == posting.getDocID()) {
-                        double tftd = posting.getPositions().size();
-                        vector[i] = (1 + Math.log(tftd))/ld;
-                        break;
-                    }
-                }
-            }
-            
-            docVector.put(file, vector);
-        }
-        
-        return docVector;
-    }
-    
+    /**
+     * Create the document vectors by creating a hashmap of doc id and double[]
+     * then looping through each term in the index and then loop through each
+     * positional posting to create the vector
+     */
     private void initializeDocumentVectors() {
-        System.out.println(dindex.getDocumentCount());
         documentVectors = new HashMap<>(dindex.getDocumentCount());
         ArrayList<String> terms = dindex.getPositionalIndexTerms();
         
@@ -560,6 +573,68 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
                 documentVectors.put(posting.getDocID(), wdts);
             }
         }
+    }
+    
+    /**
+     * Calculate the centroid of the class by adding all the document vectors
+     * together then divide each value in the vector by the D_c value
+     * @param files arraylist of integers representing the files in the class
+     * @return 
+     */
+    private double[] calculateCentroid(ArrayList<Integer> files) {
+        double[] results = documentVectors.get(files.get(0));
+        double dc = files.size();
+
+        for(int i = 1; i < files.size(); i++) {
+            double[] docVec = documentVectors.get(files.get(i));
+            
+            for(int j = 0; j < results.length; j++) {
+                results[j] += docVec[j];
+            }
+        }        
+        
+        for(int i = 0; i < results.length; i++) {
+            results[i] = results[i] / dc;
+        }
+        
+        return results;
+    }
+    
+    /**
+     * Subtract the class centroid with the document vector being passed in then
+     * square the value, add it to the sum then take the square root
+     * @param mCentroid the class centroid
+     * @param doc the document vector of the disputed document
+     * @return 
+     */
+    private double calculateClosestCentroid(double[] mCentroid, double[] doc) {
+        double sum = 0.0;
+        
+        for(int i = 0; i < mCentroid.length; i++) {
+            sum += Math.pow(mCentroid[i] - doc[i], 2);
+        }
+        
+        return Math.sqrt(sum);
+    }
+    
+    /**
+     * Updates the table with the file list passed in and update the label
+     * @param table the table to update
+     * @param files arraylist of integers containing the files
+     * @param label add the number of documents found
+     */
+    private void displayFiles(JTable table, ArrayList<Integer> files, JLabel label) {
+        String columnNames[] = new String[] {"Papers"};
+        DefaultTableModel model = (DefaultTableModel) table.getModel();
+        model.setRowCount(0);
+        model.setColumnCount(1);
+        model.setColumnIdentifiers(columnNames);
+        
+        for(Integer file : files) {
+            model.addRow(new Object[] {dindex.getFileNames(file)});
+        }
+        
+        label.setText("Documents found: " + files.size());
     }
     
     /**
@@ -600,6 +675,7 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
     private JayDocuments jDocs;
     private MadisonDocuments mDocs;
     private HamiltonDocuments hDocs;
+    private ArrayList<Integer> disputedDocs;
     private DiskInvertedIndex dindex;
     private HashMap<Integer, double[]> documentVectors;
     // Variables declaration - do not modify//GEN-BEGIN:variables

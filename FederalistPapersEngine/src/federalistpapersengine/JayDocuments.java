@@ -14,7 +14,7 @@ import java.util.HashMap;
  */
 public class JayDocuments {
     private ArrayList<Integer> files;
-    private double centroid;
+    private double[] centroid;
     private HashMap<Integer, double[]> docVec;
     
     public JayDocuments(ArrayList<Integer> files) {
@@ -25,19 +25,15 @@ public class JayDocuments {
         return this.files;
     }
        
-    public double getCentroid() {
+    public void setFiles(ArrayList<Integer> files) {
+        this.files = files;
+    }
+    
+    public double[] getCentroid() {
         return this.centroid;
     }
     
-    public void setCentroid(double centroid) {
+    public void setCentroid(double[] centroid) {
         this.centroid = centroid;
-    }
-    
-    public void setDocVector(HashMap<Integer, double[]> docVec) {
-        this.docVec = docVec;
-    }
-    
-    public HashMap<Integer, double[]> getDocVector() {
-        return this.docVec;
     }
 }

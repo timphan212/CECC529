@@ -57,7 +57,7 @@ public class DiskInvertedIndex {
             // use ByteBuffer to convert the 4 bytes into an int.
             int documentFrequency = ByteBuffer.wrap(buffer).getInt();
             
-            int lastDocId = 0, lastPosId = 0;
+            int lastPosId = 0;
             ArrayList<PositionalPosting> posPostList = new ArrayList<>();
             
             for (int i = 0; i < documentFrequency; i++) {
@@ -67,8 +67,7 @@ public class DiskInvertedIndex {
                 // read the document id
                 byte[] docBuffer = new byte[4];
                 postings.read(docBuffer, 0, docBuffer.length);
-                int documentID = ByteBuffer.wrap(docBuffer).getInt() + lastDocId;
-                lastDocId = documentID;
+                int documentID = ByteBuffer.wrap(docBuffer).getInt();
 
                 // read the term frequency
                 byte[] tfBuffer = new byte[4];
@@ -116,15 +115,13 @@ public class DiskInvertedIndex {
             // use ByteBuffer to convert the 4 bytes into an int.
             int documentFrequency = ByteBuffer.wrap(buffer).getInt();
             
-            int lastDocId = 0;
             ArrayList<PositionalPosting> posPostList = new ArrayList<>();
             
             for (int i = 0; i < documentFrequency; i++) {
                 // read the document id
                 byte[] docBuffer = new byte[4];
                 postings.read(docBuffer, 0, docBuffer.length);
-                int documentID = ByteBuffer.wrap(docBuffer).getInt() + lastDocId;
-                lastDocId = documentID;
+                int documentID = ByteBuffer.wrap(docBuffer).getInt();
                 
                 // read the term frequency
                 byte[] tfBuffer = new byte[4];
