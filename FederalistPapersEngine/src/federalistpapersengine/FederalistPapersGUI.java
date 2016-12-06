@@ -351,6 +351,7 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
                 index.buildIndexForDirectory(currentDir);
                 dindex = new DiskInvertedIndex(currentDir);
                 initializeClasses(currentDir);
+                initializeDocumentVectors();
                 JOptionPane.showMessageDialog(this, "Successfully indexed "
                         + currentDir + " files.", "Indexed",
                         JOptionPane.INFORMATION_MESSAGE);
@@ -391,6 +392,8 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
                         .toString();
                 dindex = new DiskInvertedIndex(currentDir);
                 initializeClasses(currentDir);
+                initializeDocumentVectors();
+                System.out.println(documentVectors.size());
                 JOptionPane.showMessageDialog(this, "Successfully indexed "
                         + currentDir + " files.", "Indexed",
                         JOptionPane.INFORMATION_MESSAGE);
@@ -462,14 +465,15 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
         try {
             ArrayList<String> files;
             ArrayList<Integer> docIDs;
+            
             files = DiskInvertedIndex.readAllFileNames(path + "\\JAY");
             docIDs = getDocIdList(files);
             jDocs = new JayDocuments(docIDs);
 
-            
             files = DiskInvertedIndex.readAllFileNames(path + "\\MADISON");
             docIDs = getDocIdList(files);
             mDocs = new MadisonDocuments(docIDs);
+            
             files = DiskInvertedIndex.readAllFileNames(path + "\\HAMILTON");
             docIDs = getDocIdList(files);
             hDocs = new HamiltonDocuments(docIDs);
@@ -531,6 +535,33 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
         return docVector;
     }
     
+    private void initializeDocumentVectors() {
+        System.out.println(dindex.getDocumentCount());
+        documentVectors = new HashMap<>(dindex.getDocumentCount());
+        ArrayList<String> terms = dindex.getPositionalIndexTerms();
+        
+        for(int i = 0; i < terms.size(); i++) {
+            ArrayList<PositionalPosting> postings = dindex.GetPostings(terms.get(i), true);
+            
+            for(PositionalPosting posting : postings) {
+                double ld = dindex.getDocWeight(posting.getDocID());
+                double[] wdts;
+                
+                if(documentVectors.containsKey(posting.getDocID())) {
+                    wdts = documentVectors.get(posting.getDocID());
+                }
+                else {
+                    wdts = new double[terms.size()];
+                }
+                
+                double tftd = posting.getPositions().size();
+                double wdt = 1 + Math.log(tftd);
+                wdts[i] = wdt / ld;
+                documentVectors.put(posting.getDocID(), wdts);
+            }
+        }
+    }
+    
     /**
      * @param args the command line arguments
      */
@@ -566,10 +597,11 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
         });
     }
     
-    JayDocuments jDocs;
-    MadisonDocuments mDocs;
-    HamiltonDocuments hDocs;
-    DiskInvertedIndex dindex;
+    private JayDocuments jDocs;
+    private MadisonDocuments mDocs;
+    private HamiltonDocuments hDocs;
+    private DiskInvertedIndex dindex;
+    private HashMap<Integer, double[]> documentVectors;
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton bayesianButton;
     private javax.swing.JFileChooser directoryChooser;
