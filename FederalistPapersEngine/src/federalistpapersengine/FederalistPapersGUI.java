@@ -9,14 +9,10 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GridLayout;
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map.Entry;
-import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JFileChooser;
@@ -373,37 +369,42 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
             double[] hCentroid = hDocs.getCentroid();
             double[] mCentroid = mDocs.getCentroid();
             double[] jCentroid = jDocs.getCentroid();
+            String results = "";
             
             for(int doc : disputedDocs) {
                 double[] docVector = documentVectors.get(doc);
                 double hResults = calculateClosestCentroid(hCentroid, docVector);
                 double mResults = calculateClosestCentroid(mCentroid, docVector);
                 double jResults = calculateClosestCentroid(jCentroid, docVector);
+                results += String.format("h: %.5f    m: %.5f    j: %.5f\n",
+                        hResults, mResults, jResults);
                 
                 if(hResults < mResults) {
                     if(hResults < jResults) {
-                        ArrayList<Integer> hDocList = hDocs.getFiles();
+                        ArrayList<Integer> hDocList = hDocs.getRocchioFileSet();
                         hDocList.add(doc);
-                        hDocs.setFiles(hDocList);
+                        hDocs.setRocchioFileSet(hDocList);
                     }
                 }
                 else {
                     if(mResults < jResults) {
-                        ArrayList<Integer> mDocList = mDocs.getFiles();
+                        ArrayList<Integer> mDocList = mDocs.getRocchioFileSet();
                         mDocList.add(doc);
-                        mDocs.setFiles(mDocList);
+                        mDocs.setRocchioFileSet(mDocList);
                     }
                     else {
-                        ArrayList<Integer> jDocList = jDocs.getFiles();
+                        ArrayList<Integer> jDocList = jDocs.getRocchioFileSet();
                         jDocList.add(doc);
-                        jDocs.setFiles(jDocList);
+                        jDocs.setRocchioFileSet(jDocList);
                     }
                 }
             }
             
-            displayFiles(hamiltonTable, hDocs.getFiles(), hamiltonFileLabel);
-            displayFiles(madisonTable, mDocs.getFiles(), madisonFileLabel);
-            displayFiles(jayTable, jDocs.getFiles(), jayFileLabel);
+            JOptionPane.showMessageDialog(this, results, "Rocchio Results",
+                    JOptionPane.INFORMATION_MESSAGE);
+            displayFiles(hamiltonTable, hDocs.getRocchioFileSet(), hamiltonFileLabel);
+            displayFiles(madisonTable, mDocs.getRocchioFileSet(), madisonFileLabel);
+            displayFiles(jayTable, jDocs.getRocchioFileSet(), jayFileLabel);
         }
     }//GEN-LAST:event_rocchioButtonActionPerformed
 
@@ -413,9 +414,9 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
                     , "Index error!", JOptionPane.ERROR);
         }
         else {
-            // build discriminating set of vocabulary terms T using mutual information I(t,c)
-                // loop through each term and calculate the I(t,c) formula
-            // should have three double[terms.size] containing the mutual information score for each class
+            getMutualInfoScores();
+            getEvidenceVector();
+            trainBayesianClassifier();
             // loop through each term in T
                 // calculate p(t|ch) p(t|cm) p(t|cj) with laplace smoothing
             // loop through disputed docs and calculate cd
@@ -645,6 +646,167 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
         label.setText("Documents found: " + files.size());
     }
     
+    private void getMutualInfoScores() {
+        ArrayList<String> terms = dindex.getPositionalIndexTerms();
+        jDocs.setItc(new double[terms.size()]);
+        hDocs.setItc(new double[terms.size()]);
+        mDocs.setItc(new double[terms.size()]);
+        
+        for(int i = 0; i < terms.size(); i++) {
+            ArrayList<PositionalPosting> postings = dindex.GetPostings(terms.get(i), true);
+            calculateMutualInfoScores(terms.get(i), postings, i);
+        }
+    }
+    
+    private void calculateMutualInfoScores(String term, 
+            ArrayList<PositionalPosting> postings, int index) {
+        int jN11 = 0, hN11 = 0, mN11 = 0;
+        int jN01, hN01, mN01;
+        int jN10, hN10, mN10;
+        int N00;
+        HashMap<String, Integer> hFtcMap = hDocs.getFtcMap();
+        HashMap<String, Integer> mFtcMap = mDocs.getFtcMap();
+        HashMap<String, Integer> jFtcMap = jDocs.getFtcMap();
+        int hFtcSum = 0;
+        int mFtcSum = 0;
+        int jFtcSum = 0;
+        
+        for (PositionalPosting posting : postings) {
+            if (hDocs.getFiles().contains(posting.getDocID())) {
+                if(hFtcMap.containsKey(term)) {
+                    int ftc = hFtcMap.get(term);
+                    hFtcMap.put(term, ftc + posting.getPositions().size());
+                }
+                else {
+                    hFtcMap.put(term, posting.getPositions().size());
+                }
+                
+                hN11++;
+                hFtcSum += posting.getPositions().size();
+            } else if (mDocs.getFiles().contains(posting.getDocID())) {
+                if(mFtcMap.containsKey(term)) {
+                    int ftc = mFtcMap.get(term);
+                    mFtcMap.put(term, ftc + posting.getPositions().size());
+                }
+                else {
+                    mFtcMap.put(term, posting.getPositions().size());
+                }
+                
+                mN11++;
+                mFtcSum += posting.getPositions().size();
+            } else if (jDocs.getFiles().contains(posting.getDocID())) {
+                if(jFtcMap.containsKey(term)) {
+                    int ftc = jFtcMap.get(term);
+                    jFtcMap.put(term, ftc + posting.getPositions().size());
+                }
+                else {
+                    jFtcMap.put(term, posting.getPositions().size());
+                }
+                
+                jN11++;
+                jFtcSum += posting.getPositions().size();
+            }
+        }
+
+        jDocs.setFtcSum(jFtcSum);
+        hDocs.setFtcSum(hFtcSum);
+        mDocs.setFtcSum(mFtcSum);
+        
+        jN01 = jDocs.getFiles().size() - jN11;
+        mN01 = mDocs.getFiles().size() - mN11;
+        hN01 = hDocs.getFiles().size() - hN11;
+
+        jN10 = hN11 + mN11;
+        hN10 = jN11 + mN11;
+        mN10 = jN11 + hN11;
+
+        N00 = dindex.getDocumentCount() - jN11 - mN11 - hN11;
+
+        if (hN11 != 0 && mN11 != 0 && jN11 != 0) {
+            double jItcScore = calculateItc((double)jN11, (double)jN01,
+                    (double)jN10, (double)N00);
+            double mItcScore = calculateItc((double)mN11, (double)mN01,
+                    (double)mN10, (double)N00);
+            double hItcScore = calculateItc((double)hN11, (double)hN01,
+                    (double)hN10, (double)N00);
+
+            double[] jItc = jDocs.getItc();
+            jItc[index] = jItcScore;
+            jDocs.setItc(jItc);
+            double[] mItc = mDocs.getItc();
+            mItc[index] = mItcScore;
+            mDocs.setItc(mItc);
+            double[] hItc = hDocs.getItc();
+            hItc[index] = hItcScore;
+            hDocs.setItc(hItc);
+        }
+    }
+    
+    private double calculateItc(double N11, double N01, double N10, double N00) {
+        double N = (double)dindex.getDocumentCount();
+        double w, x, y, z;
+
+        w = (N11/N)*(Math.log10((N*N11)/((N11+N10)*(N11+N01)))/Math.log10(2.0));
+
+        if(Double.isNaN(w)) {
+            w = 0.0;
+        }
+        
+        x = (N01/N)*(Math.log10((N*N01)/((N01+N00)*(N11+N01)))/Math.log10(2.0));
+        
+        if(Double.isNaN(x)) {
+            x = 0.0;
+        }
+        
+        y = (N10/N)*(Math.log10((N*N10)/((N11+N10)*(N10+N00)))/Math.log10(2.0));
+        
+        if(Double.isNaN(y)) {
+            y = 0.0;
+        }
+        
+        z = (N00/N)*(Math.log10((N*N00)/((N01+N00)*(N10+N00)))/Math.log10(2));
+        
+        if(Double.isNaN(z)) {
+            z = 0.0;
+        }
+        
+        return w+x+y+z;
+    }
+    
+    private void getEvidenceVector() {
+        double[] jScores = jDocs.getItc();
+        double[] mScores = mDocs.getItc();
+        double[] hScores = hDocs.getItc();
+        evidence = new double[dindex.getTermCount()];
+        
+        for(int i = 0; i < dindex.getTermCount(); i++) {
+            if(mScores[i] > hScores[i]) {
+                if(mScores[i] > jScores[i]) {
+                    evidence[i] = mScores[i];
+                }
+            }
+            else {
+                if(hScores[i] > jScores[i]) {
+                    evidence[i] = hScores[i];
+                }
+                else {
+                    evidence[i] = jScores[i];
+                }
+            }
+        }
+    }
+    
+    private void trainBayesianClassifier() {
+        double[] ptch = new double[evidence.length];
+        double[] ptcm = new double[evidence.length];
+        double[] ptcj = new double[evidence.length];
+        
+        for(int i = 0; i < evidence.length; i++) {
+            
+        }
+        
+    }
+    
     /**
      * @param args the command line arguments
      */
@@ -686,6 +848,7 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
     private ArrayList<Integer> disputedDocs;
     private DiskInvertedIndex dindex;
     private HashMap<Integer, double[]> documentVectors;
+    private double[] evidence;
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton bayesianButton;
     private javax.swing.JFileChooser directoryChooser;

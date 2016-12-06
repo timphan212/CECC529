@@ -6,6 +6,7 @@
 package federalistpapersengine;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 /**
  *
@@ -14,9 +15,15 @@ import java.util.ArrayList;
 public class HamiltonDocuments {
     private ArrayList<Integer> files;
     private double[] centroid;
+    private double[] itc;
+    private ArrayList<Integer> rocchioFileSet;
+    private HashMap<String, Integer> ftcMap;
+    private int ftcSum;
     
     public HamiltonDocuments(ArrayList<Integer> files) {
         this.files = files;
+        this.rocchioFileSet = files;
+        ftcMap = new HashMap<>();
     }
     
     public ArrayList<Integer> getFiles() {
@@ -33,5 +40,37 @@ public class HamiltonDocuments {
     
     public void setCentroid(double[] centroid) {
         this.centroid = centroid;
+    }
+
+    public double[] getItc() {
+        return itc;
+    }
+
+    public void setItc(double[] itc) {
+        this.itc = itc;
+    }
+
+    public ArrayList<Integer> getRocchioFileSet() {
+        return rocchioFileSet;
+    }
+
+    public void setRocchioFileSet(ArrayList<Integer> rocchioFileSet) {
+        this.rocchioFileSet = rocchioFileSet;
+    }
+
+    public HashMap<String, Integer> getFtcMap() {
+        return ftcMap;
+    }
+
+    public void setFtcMap(HashMap<String, Integer> ftcMap) {
+        this.ftcMap = ftcMap;
+    }
+
+    public int getFtcSum() {
+        return ftcSum;
+    }
+
+    public void setFtcSum(int ftcSum) {
+        this.ftcSum = ftcSum;
     }
 }

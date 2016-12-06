@@ -15,10 +15,15 @@ import java.util.HashMap;
 public class JayDocuments {
     private ArrayList<Integer> files;
     private double[] centroid;
-    private HashMap<Integer, double[]> docVec;
+    private double[] itc;
+    private ArrayList<Integer> rocchioFileSet;
+    private HashMap<String, Integer> ftcMap;
+    private int ftcSum;
     
     public JayDocuments(ArrayList<Integer> files) {
         this.files = files;
+        this.rocchioFileSet = files;
+        ftcMap = new HashMap<>();
     }
     
     public ArrayList<Integer> getFiles() {
@@ -35,5 +40,37 @@ public class JayDocuments {
     
     public void setCentroid(double[] centroid) {
         this.centroid = centroid;
+    }
+
+    public double[] getItc() {
+        return itc;
+    }
+
+    public void setItc(double[] itc) {
+        this.itc = itc;
+    }
+
+    public ArrayList<Integer> getRocchioFileSet() {
+        return rocchioFileSet;
+    }
+
+    public void setRocchioFileSet(ArrayList<Integer> rocchioFileSet) {
+        this.rocchioFileSet = rocchioFileSet;
+    }
+
+    public HashMap<String, Integer> getFtcMap() {
+        return ftcMap;
+    }
+
+    public void setFtcMap(HashMap<String, Integer> ftcMap) {
+        this.ftcMap = ftcMap;
+    }
+
+    public int getFtcSum() {
+        return ftcSum;
+    }
+
+    public void setFtcSum(int ftcSum) {
+        this.ftcSum = ftcSum;
     }
 }
