@@ -412,6 +412,14 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
             JOptionPane.showMessageDialog(this, "Index is null."
                     , "Index error!", JOptionPane.ERROR);
         }
+        else {
+            // build discriminating set of vocabulary terms T using mutual information I(t,c)
+                // loop through each term and calculate the I(t,c) formula
+            // should have three double[terms.size] containing the mutual information score for each class
+            // loop through each term in T
+                // calculate p(t|ch) p(t|cm) p(t|cj) with laplace smoothing
+            // loop through disputed docs and calculate cd
+        }
     }//GEN-LAST:event_bayesianButtonActionPerformed
 
     private void openExistingMenuItemActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_openExistingMenuItemActionPerformed
