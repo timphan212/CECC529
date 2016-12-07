@@ -16,13 +16,12 @@ public class JayDocuments {
     private ArrayList<Integer> files;
     private double[] centroid;
     private double[] itc;
-    private ArrayList<Integer> rocchioFileSet;
     private HashMap<String, Integer> ftcMap;
     private int ftcSum;
+    private ArrayList<Double> ptcj;
     
     public JayDocuments(ArrayList<Integer> files) {
         this.files = files;
-        this.rocchioFileSet = files;
         ftcMap = new HashMap<>();
     }
     
@@ -50,14 +49,6 @@ public class JayDocuments {
         this.itc = itc;
     }
 
-    public ArrayList<Integer> getRocchioFileSet() {
-        return rocchioFileSet;
-    }
-
-    public void setRocchioFileSet(ArrayList<Integer> rocchioFileSet) {
-        this.rocchioFileSet = rocchioFileSet;
-    }
-
     public HashMap<String, Integer> getFtcMap() {
         return ftcMap;
     }
@@ -72,5 +63,13 @@ public class JayDocuments {
 
     public void setFtcSum(int ftcSum) {
         this.ftcSum = ftcSum;
+    }
+
+    public ArrayList<Double> getPtcj() {
+        return ptcj;
+    }
+
+    public void setPtcj(ArrayList<Double> ptcj) {
+        this.ptcj = ptcj;
     }
 }

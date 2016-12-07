@@ -369,6 +369,12 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
             double[] hCentroid = hDocs.getCentroid();
             double[] mCentroid = mDocs.getCentroid();
             double[] jCentroid = jDocs.getCentroid();
+            ArrayList<Integer> hDocList = new ArrayList<>();
+            hDocList.addAll(hDocs.getFiles());
+            ArrayList<Integer> mDocList = new ArrayList<>();
+            mDocList.addAll(mDocs.getFiles());
+            ArrayList<Integer> jDocList = new ArrayList<>();
+            jDocList.addAll(jDocs.getFiles());
             String results = "";
             
             for(int doc : disputedDocs) {
@@ -376,35 +382,29 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
                 double hResults = calculateClosestCentroid(hCentroid, docVector);
                 double mResults = calculateClosestCentroid(mCentroid, docVector);
                 double jResults = calculateClosestCentroid(jCentroid, docVector);
-                results += String.format("h: %.5f    m: %.5f    j: %.5f\n",
-                        hResults, mResults, jResults);
+                results += String.format("%s> h: %.5f    m: %.5f    j: %.5f\n",
+                        dindex.getFileNames(doc), hResults, mResults, jResults);
                 
-                if(hResults < mResults) {
+               if(hResults < mResults) {
                     if(hResults < jResults) {
-                        ArrayList<Integer> hDocList = hDocs.getRocchioFileSet();
                         hDocList.add(doc);
-                        hDocs.setRocchioFileSet(hDocList);
                     }
                 }
                 else {
                     if(mResults < jResults) {
-                        ArrayList<Integer> mDocList = mDocs.getRocchioFileSet();
                         mDocList.add(doc);
-                        mDocs.setRocchioFileSet(mDocList);
                     }
                     else {
-                        ArrayList<Integer> jDocList = jDocs.getRocchioFileSet();
                         jDocList.add(doc);
-                        jDocs.setRocchioFileSet(jDocList);
                     }
                 }
             }
             
             JOptionPane.showMessageDialog(this, results, "Rocchio Results",
                     JOptionPane.INFORMATION_MESSAGE);
-            displayFiles(hamiltonTable, hDocs.getRocchioFileSet(), hamiltonFileLabel);
-            displayFiles(madisonTable, mDocs.getRocchioFileSet(), madisonFileLabel);
-            displayFiles(jayTable, jDocs.getRocchioFileSet(), jayFileLabel);
+            displayFiles(hamiltonTable, hDocList, hamiltonFileLabel);
+            displayFiles(madisonTable, mDocList, madisonFileLabel);
+            displayFiles(jayTable, jDocList, jayFileLabel);
         }
     }//GEN-LAST:event_rocchioButtonActionPerformed
 
@@ -416,10 +416,33 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
         else {
             getMutualInfoScores();
             getEvidenceVector();
+            selectEvidence();
+            getFrequencyTerms();
             trainBayesianClassifier();
-            // loop through each term in T
-                // calculate p(t|ch) p(t|cm) p(t|cj) with laplace smoothing
-            // loop through disputed docs and calculate cd
+            
+            ArrayList<Double> ptch = hDocs.getPtch();
+            ArrayList<Double> ptcj = jDocs.getPtcj();
+            ArrayList<Double> ptcm = mDocs.getPtcm();
+
+            int fileCount = dindex.getDocumentCount();
+
+            for(int file : disputedDocs) {
+                double hSum = 0.0, mSum = 0.0, jSum = 0.0;
+                ArrayList<String> terms = disputedDocsMap.get(file);
+ 
+                for(String term : terms) {
+                    int index = disputedDocsTerms.indexOf(term);
+                    hSum += Math.log(ptch.get(index));
+                    mSum += Math.log(ptcm.get(index));
+                    jSum += Math.log(ptcj.get(index));
+                }               
+                
+                hSum += Math.log((double)hDocs.getFiles().size()/fileCount);
+                mSum += Math.log((double)mDocs.getFiles().size()/fileCount);
+                jSum += Math.log((double)jDocs.getFiles().size()/fileCount);
+                
+                System.out.println("h: " + hSum + " m: " + mSum + " j: " + jSum);
+            }
         }
     }//GEN-LAST:event_bayesianButtonActionPerformed
 
@@ -663,55 +686,20 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
         int jN11 = 0, hN11 = 0, mN11 = 0;
         int jN01, hN01, mN01;
         int jN10, hN10, mN10;
-        int N00;
-        HashMap<String, Integer> hFtcMap = hDocs.getFtcMap();
-        HashMap<String, Integer> mFtcMap = mDocs.getFtcMap();
-        HashMap<String, Integer> jFtcMap = jDocs.getFtcMap();
-        int hFtcSum = 0;
-        int mFtcSum = 0;
-        int jFtcSum = 0;
+        int jN00, hN00, mN00;
         
         for (PositionalPosting posting : postings) {
             if (hDocs.getFiles().contains(posting.getDocID())) {
-                if(hFtcMap.containsKey(term)) {
-                    int ftc = hFtcMap.get(term);
-                    hFtcMap.put(term, ftc + posting.getPositions().size());
-                }
-                else {
-                    hFtcMap.put(term, posting.getPositions().size());
-                }
-                
                 hN11++;
-                hFtcSum += posting.getPositions().size();
-            } else if (mDocs.getFiles().contains(posting.getDocID())) {
-                if(mFtcMap.containsKey(term)) {
-                    int ftc = mFtcMap.get(term);
-                    mFtcMap.put(term, ftc + posting.getPositions().size());
-                }
-                else {
-                    mFtcMap.put(term, posting.getPositions().size());
-                }
-                
+            } 
+            else if (mDocs.getFiles().contains(posting.getDocID())) {
                 mN11++;
-                mFtcSum += posting.getPositions().size();
-            } else if (jDocs.getFiles().contains(posting.getDocID())) {
-                if(jFtcMap.containsKey(term)) {
-                    int ftc = jFtcMap.get(term);
-                    jFtcMap.put(term, ftc + posting.getPositions().size());
-                }
-                else {
-                    jFtcMap.put(term, posting.getPositions().size());
-                }
-                
+            } 
+            else if (jDocs.getFiles().contains(posting.getDocID())) {
                 jN11++;
-                jFtcSum += posting.getPositions().size();
             }
         }
 
-        jDocs.setFtcSum(jFtcSum);
-        hDocs.setFtcSum(hFtcSum);
-        mDocs.setFtcSum(mFtcSum);
-        
         jN01 = jDocs.getFiles().size() - jN11;
         mN01 = mDocs.getFiles().size() - mN11;
         hN01 = hDocs.getFiles().size() - hN11;
@@ -720,26 +708,28 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
         hN10 = jN11 + mN11;
         mN10 = jN11 + hN11;
 
-        N00 = dindex.getDocumentCount() - jN11 - mN11 - hN11;
+        jN00 = dindex.getDocumentCount() - jN11 - jN01 - jN10;
+        hN00 = dindex.getDocumentCount() - hN11 - hN01 - hN10;
+        mN00 = dindex.getDocumentCount() - mN11 - mN01 - mN10;
+        
 
-        if (hN11 != 0 && mN11 != 0 && jN11 != 0) {
-            double jItcScore = calculateItc((double)jN11, (double)jN01,
-                    (double)jN10, (double)N00);
-            double mItcScore = calculateItc((double)mN11, (double)mN01,
-                    (double)mN10, (double)N00);
-            double hItcScore = calculateItc((double)hN11, (double)hN01,
-                    (double)hN10, (double)N00);
 
-            double[] jItc = jDocs.getItc();
-            jItc[index] = jItcScore;
-            jDocs.setItc(jItc);
-            double[] mItc = mDocs.getItc();
-            mItc[index] = mItcScore;
-            mDocs.setItc(mItc);
-            double[] hItc = hDocs.getItc();
-            hItc[index] = hItcScore;
-            hDocs.setItc(hItc);
-        }
+        double jItcScore = calculateItc((double) jN11, (double) jN01,
+                (double) jN10, (double) jN00);
+        double mItcScore = calculateItc((double) mN11, (double) mN01,
+                (double) mN10, (double) mN00);
+        double hItcScore = calculateItc((double) hN11, (double) hN01,
+                (double) hN10, (double) hN00);
+
+        double[] jItc = jDocs.getItc();
+        jItc[index] = jItcScore;
+        jDocs.setItc(jItc);
+        double[] mItc = mDocs.getItc();
+        mItc[index] = mItcScore;
+        mDocs.setItc(mItc);
+        double[] hItc = hDocs.getItc();
+        hItc[index] = hItcScore;
+        hDocs.setItc(hItc);
     }
     
     private double calculateItc(double N11, double N01, double N10, double N00) {
@@ -796,15 +786,137 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
         }
     }
     
-    private void trainBayesianClassifier() {
-        double[] ptch = new double[evidence.length];
-        double[] ptcm = new double[evidence.length];
-        double[] ptcj = new double[evidence.length];
-        
+    private void selectEvidence() {
+        evidenceTerms = new ArrayList<>();
+
         for(int i = 0; i < evidence.length; i++) {
+            if(evidence[i] > 0.1) {
+                evidenceTerms.add(dindex.getPositionalIndexTerms().get(i));
+            }
+        }
+    }
+    
+    private void getFrequencyTerms() {
+        disputedDocsTerms = new ArrayList<>();
+        HashMap<String, Integer> hFtcMap = hDocs.getFtcMap();
+        HashMap<String, Integer> mFtcMap = mDocs.getFtcMap();
+        HashMap<String, Integer> jFtcMap = jDocs.getFtcMap();
+        disputedDocsMap = new HashMap<>();
+        int hFtcSum = 0;
+        int mFtcSum = 0;
+        int jFtcSum = 0;
+        
+        for(String term : evidenceTerms) {
+            ArrayList<PositionalPosting> postings = dindex
+                    .GetPostings(term, true);
             
+            for (PositionalPosting posting : postings) {
+                if (hDocs.getFiles().contains(posting.getDocID())) {
+                    if (hFtcMap.containsKey(term)) {
+                        int ftc = hFtcMap.get(term);
+                        hFtcMap.put(term, ftc + posting.getPositions().size());
+                    } else {
+                        hFtcMap.put(term, posting.getPositions().size());
+                    }
+
+                    hFtcSum += posting.getPositions().size();
+                }
+                else if (mDocs.getFiles().contains(posting.getDocID())) {
+                    if (mFtcMap.containsKey(term)) {
+                        int ftc = mFtcMap.get(term);
+                        mFtcMap.put(term, ftc + posting.getPositions().size());
+                    } else {
+                        mFtcMap.put(term, posting.getPositions().size());
+                    }
+
+                    mFtcSum += posting.getPositions().size();
+                } 
+                else if (jDocs.getFiles().contains(posting.getDocID())) {
+                    if (jFtcMap.containsKey(term)) {
+                        int ftc = jFtcMap.get(term);
+                        jFtcMap.put(term, ftc + posting.getPositions().size());
+                    } else {
+                        jFtcMap.put(term, posting.getPositions().size());
+                    }
+
+                    jFtcSum += posting.getPositions().size();
+                }
+                else if(disputedDocs.contains(posting.getDocID())) {
+                    if(!disputedDocsTerms.isEmpty()) {
+                        if(disputedDocsTerms.get(disputedDocsTerms.size()-1)
+                                .compareTo(term) != 0) {
+                            disputedDocsTerms.add(term);
+                        }
+                    }
+                    else {
+                        disputedDocsTerms.add(term);
+                    }
+                    if(!disputedDocsMap.containsKey(posting.getDocID())) {
+                        ArrayList<String> docTerms = new ArrayList<>();
+                        docTerms.add(term);
+                        disputedDocsMap.put(posting.getDocID(), docTerms);
+                    }
+                    else {
+                        ArrayList<String> docTerms = disputedDocsMap
+                                .get(posting.getDocID());
+                        
+                        if(!docTerms.contains(term)) {
+                            docTerms.add(term);
+                            disputedDocsMap.put(posting.getDocID(), docTerms);
+                        }
+                    }
+                }
+            }
         }
         
+        jDocs.setFtcSum(jFtcSum);
+        hDocs.setFtcSum(hFtcSum);
+        mDocs.setFtcSum(mFtcSum);
+        
+        jDocs.setFtcMap(jFtcMap);
+        hDocs.setFtcMap(hFtcMap);
+        mDocs.setFtcMap(mFtcMap);
+        
+    }
+    
+    private void trainBayesianClassifier() {
+        ArrayList<Double> ptch = new ArrayList<>();
+        ArrayList<Double> ptcm = new ArrayList<>();
+        ArrayList<Double> ptcj = new ArrayList<>();
+        HashMap<String, Integer> hFtcMap = hDocs.getFtcMap();
+        HashMap<String, Integer> jFtcMap = jDocs.getFtcMap();
+        HashMap<String, Integer> mFtcMap = mDocs.getFtcMap();
+        
+        for(String term : evidenceTerms) {
+            if(hFtcMap.containsKey(term)) {
+                ptch.add((double)(hFtcMap.get(term) + 1)
+                        /(double)(evidenceTerms.size() + hDocs.getFtcSum()));
+            }
+            else {
+                ptch.add((double)(1)
+                        /(double)(evidenceTerms.size() + hDocs.getFtcSum()));
+            }
+            if(mFtcMap.containsKey(term)) {
+                ptcm.add((double)(mFtcMap.get(term) + 1)
+                        /(double)(evidenceTerms.size() + mDocs.getFtcSum()));
+            }
+            else {
+                ptcm.add((double)(1)
+                        /(double)(evidenceTerms.size() + mDocs.getFtcSum()));
+            }
+            if(jFtcMap.containsKey(term)) {
+                ptcj.add((double)(jFtcMap.get(term) + 1)
+                        /(double)(evidenceTerms.size() + jDocs.getFtcSum()));
+            }
+            else {
+                ptcj.add((double)(1)
+                        /(double)(evidenceTerms.size() + jDocs.getFtcSum()));
+            }
+        }
+        
+        jDocs.setPtcj(ptcj);
+        hDocs.setPtch(ptch);
+        mDocs.setPtcm(ptcm);
     }
     
     /**
@@ -846,9 +958,12 @@ public class FederalistPapersGUI extends javax.swing.JFrame {
     private MadisonDocuments mDocs;
     private HamiltonDocuments hDocs;
     private ArrayList<Integer> disputedDocs;
+    private ArrayList<String> disputedDocsTerms;
+    private HashMap<Integer, ArrayList<String>> disputedDocsMap;
     private DiskInvertedIndex dindex;
     private HashMap<Integer, double[]> documentVectors;
     private double[] evidence;
+    private ArrayList<String> evidenceTerms;
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton bayesianButton;
     private javax.swing.JFileChooser directoryChooser;

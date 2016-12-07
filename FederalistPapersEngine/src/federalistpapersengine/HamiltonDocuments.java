@@ -16,13 +16,11 @@ public class HamiltonDocuments {
     private ArrayList<Integer> files;
     private double[] centroid;
     private double[] itc;
-    private ArrayList<Integer> rocchioFileSet;
     private HashMap<String, Integer> ftcMap;
     private int ftcSum;
-    
+    private ArrayList<Double> ptch;
     public HamiltonDocuments(ArrayList<Integer> files) {
         this.files = files;
-        this.rocchioFileSet = files;
         ftcMap = new HashMap<>();
     }
     
@@ -50,14 +48,6 @@ public class HamiltonDocuments {
         this.itc = itc;
     }
 
-    public ArrayList<Integer> getRocchioFileSet() {
-        return rocchioFileSet;
-    }
-
-    public void setRocchioFileSet(ArrayList<Integer> rocchioFileSet) {
-        this.rocchioFileSet = rocchioFileSet;
-    }
-
     public HashMap<String, Integer> getFtcMap() {
         return ftcMap;
     }
@@ -72,5 +62,13 @@ public class HamiltonDocuments {
 
     public void setFtcSum(int ftcSum) {
         this.ftcSum = ftcSum;
+    }
+
+    public ArrayList<Double> getPtch() {
+        return ptch;
+    }
+
+    public void setPtch(ArrayList<Double> ptch) {
+        this.ptch = ptch;
     }
 }
