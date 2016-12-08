@@ -19,9 +19,11 @@ public class HamiltonDocuments {
     private HashMap<String, Integer> ftcMap;
     private int ftcSum;
     private ArrayList<Double> ptch;
-    public HamiltonDocuments(ArrayList<Integer> files) {
+    
+    public HamiltonDocuments(ArrayList<Integer> files, int size) {
         this.files = files;
         ftcMap = new HashMap<>();
+        itc = new double[size];
     }
     
     public ArrayList<Integer> getFiles() {

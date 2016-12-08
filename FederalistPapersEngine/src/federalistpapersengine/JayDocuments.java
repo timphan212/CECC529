@@ -20,9 +20,10 @@ public class JayDocuments {
     private int ftcSum;
     private ArrayList<Double> ptcj;
     
-    public JayDocuments(ArrayList<Integer> files) {
+    public JayDocuments(ArrayList<Integer> files, int size) {
         this.files = files;
         ftcMap = new HashMap<>();
+        itc = new double[size];
     }
     
     public ArrayList<Integer> getFiles() {

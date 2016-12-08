@@ -20,9 +20,10 @@ public class MadisonDocuments {
     private int ftcSum;
     private ArrayList<Double> ptcm;
     
-    public MadisonDocuments(ArrayList<Integer> files) {
+    public MadisonDocuments(ArrayList<Integer> files, int size) {
         this.files = files;
         ftcMap = new HashMap<>();
+        itc = new double[size];
     }
     
     public ArrayList<Integer> getFiles() {
